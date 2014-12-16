@@ -27,7 +27,8 @@ include \
   'samza-log4j',
   'samza-shell',
   'samza-yarn',
-  'samza-test'
+  'samza-test',
+  'samza-sql'
 
 rootProject.children.each {
   if (it.name != 'samza-api' && it.name != 'samza-shell' && it.name != 'samza-log4j') {
