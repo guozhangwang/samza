@@ -1,16 +1,12 @@
 package org.apache.samza.sql.task;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.Iterator;
 
-import org.apache.commons.collections.MultiMap;
 import org.apache.samza.config.Config;
-import org.apache.samza.container.TaskName;
-import org.apache.samza.metrics.MetricsRegistry;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.TupleOperator;
+import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
+import org.apache.samza.sql.api.task.OperatorSystemContext;
 import org.apache.samza.sql.data.IncomingMessageTuple;
 import org.apache.samza.sql.operators.factory.SimpleOperatorFactoryImpl;
 import org.apache.samza.sql.operators.output.SystemStreamOp;
@@ -19,16 +15,16 @@ import org.apache.samza.sql.operators.partition.PartitionOp;
 import org.apache.samza.sql.operators.partition.PartitionSpec;
 import org.apache.samza.sql.operators.relation.Join;
 import org.apache.samza.sql.operators.relation.JoinSpec;
+import org.apache.samza.sql.operators.routing.SqlRoutingContextManager;
 import org.apache.samza.sql.operators.stream.InsertStream;
 import org.apache.samza.sql.operators.stream.InsertStreamSpec;
 import org.apache.samza.sql.operators.window.BoundedTimeWindow;
 import org.apache.samza.sql.operators.window.WindowSpec;
-import org.apache.samza.sql.store.SQLRelationStore;
+import org.apache.samza.sql.store.SqlContextManager;
 import org.apache.samza.system.IncomingMessageEnvelope;
-import org.apache.samza.system.SystemStreamPartition;
+import org.apache.samza.system.SystemStream;
 import org.apache.samza.task.InitableTask;
 import org.apache.samza.task.MessageCollector;
-import org.apache.samza.task.SqlTaskContext;
 import org.apache.samza.task.StreamTask;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
@@ -37,139 +33,124 @@ import org.apache.samza.task.WindowableTask;
 
 public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
 
-  private SQLRelationStore store;
+  private SqlContextManager initCntx;
 
-  private Map<String, Operator> operators = new HashMap<String, Operator>();
-
-  private MultiMap inputOps;
-
-  private SqlTaskContext sqlContext;
+  private OperatorRoutingContext rteCntx;
 
   @SuppressWarnings("unchecked")
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
     // TODO Auto-generated method stub
-    this.sqlContext.setup(collector, coordinator);
+    OperatorSystemContext opCntx = new OperatorSystemContext() {
 
-    IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
-    for (TupleOperator inputOp : (Collection<TupleOperator>) inputOps.get(ituple.getStreamSpec())) {
-      inputOp.process(ituple);
+      @Override
+      public MessageCollector getMessageCollector() {
+        // TODO Auto-generated method stub
+        return collector;
+      }
+
+      @Override
+      public TaskCoordinator getTaskCoordinator() {
+        // TODO Auto-generated method stub
+        return coordinator;
+      }
+
+      @Override
+      public SystemStream getSystemStream() {
+        // TODO Auto-generated method stub
+        return StreamSqlTask.this.initCntx.getSystemStream();
+      }
+
+    };
+
+    for (Iterator<Operator> iter = this.rteCntx.getSystemOutputOps().iterator(); iter.hasNext();) {
+      iter.next().setSystemContext(opCntx);
     }
 
-    this.sqlContext.reset();
+    IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
+    for (Iterator<TupleOperator> iter = this.rteCntx.getSystemInputOps().iterator(ituple.getStreamSpec()); iter
+        .hasNext();) {
+      iter.next().process(ituple, this.rteCntx);
+    }
+
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // TODO Auto-generated method stub
-    this.sqlContext.setup(collector, coordinator);
-
-    long currNano = System.nanoTime();
-    for (TupleOperator inputOp : (Collection<TupleOperator>) inputOps.values()) {
-      inputOp.timeout(currNano);
-    }
-
-    this.sqlContext.reset();
-  }
-
-  @Override
-  public void init(Config config, TaskContext context) throws Exception {
-    // TODO Auto-generated method stub
-    this.sqlContext = new SqlTaskContext() {
-
-      private MessageCollector collector = null;
-      private TaskCoordinator coordinator = null;
-
-      @Override
-      public MetricsRegistry getMetricsRegistry() {
-        // TODO Auto-generated method stub
-        return context.getMetricsRegistry();
-      }
-
-      @Override
-      public Set<SystemStreamPartition> getSystemStreamPartitions() {
-        // TODO Auto-generated method stub
-        return context.getSystemStreamPartitions();
-      }
-
-      @Override
-      public Object getStore(String name) {
-        // TODO Auto-generated method stub
-        return context.getStore(name);
-      }
-
-      @Override
-      public TaskName getTaskName() {
-        // TODO Auto-generated method stub
-        return context.getTaskName();
-      }
-
-      @Override
-      public void setup(MessageCollector collector, TaskCoordinator coordinator) {
-        // TODO Auto-generated method stub
-        this.collector = collector;
-        this.coordinator = coordinator;
-      }
-
+    OperatorSystemContext opCntx = new OperatorSystemContext() {
       @Override
       public MessageCollector getMessageCollector() {
         // TODO Auto-generated method stub
-        return this.collector;
+        return collector;
       }
 
       @Override
-      public TaskCoordinator getCoordinator() {
+      public TaskCoordinator getTaskCoordinator() {
         // TODO Auto-generated method stub
-        return this.coordinator;
+        return coordinator;
       }
 
       @Override
-      public void reset() {
+      public SystemStream getSystemStream() {
         // TODO Auto-generated method stub
-        this.collector = null;
-        this.coordinator = null;
+        return StreamSqlTask.this.initCntx.getSystemStream();
       }
 
     };
 
+    long currNano = System.nanoTime();
+    for (Iterator<TupleOperator> iter = this.rteCntx.getSystemInputOps().values().iterator(); iter.hasNext();) {
+      iter.next().timeout(currNano, this.rteCntx);
+    }
+  }
+
+  @Override
+  public void init(Config config, TaskContext context) throws Exception {
+    // create all operators first
+    // 1. create two window operators
     SimpleOperatorFactoryImpl operatorFactory = new SimpleOperatorFactoryImpl();
     WindowSpec spec1 = new WindowSpec();
     WindowSpec spec2 = new WindowSpec();
-    BoundedTimeWindow wnd1 = (BoundedTimeWindow) operatorFactory.getTupleRelationOperator(spec1);
-    BoundedTimeWindow wnd2 = (BoundedTimeWindow) operatorFactory.getTupleRelationOperator(spec2);
-    operators.put(spec1.getId(), wnd1);
-    operators.put(spec2.getId(), wnd2);
-
-    inputOps.put(spec1.getInputSpec(), wnd1);
-    inputOps.put(spec2.getInputSpec(), wnd2);
+    BoundedTimeWindow wnd1 = (BoundedTimeWindow) operatorFactory.getTupleOperator(spec1);
+    BoundedTimeWindow wnd2 = (BoundedTimeWindow) operatorFactory.getTupleOperator(spec2);
+    // 2. create one join operator
     JoinSpec joinSpec = new JoinSpec();
-    Join join = (Join) operatorFactory.getRelationRelationOperator(joinSpec);
-    operators.put(joinSpec.getId(), join);
+    Join join = (Join) operatorFactory.getRelationOperator(joinSpec);
+    // 3. create one stream operator
     InsertStreamSpec istrmSpec = new InsertStreamSpec();
-    InsertStream istream = (InsertStream) operatorFactory.getRelationTupleOperator(istrmSpec);
-    operators.put(istrmSpec.getId(), istream);
+    InsertStream istream = (InsertStream) operatorFactory.getRelationOperator(istrmSpec);
+    // 4. create a re-partition operator
     PartitionSpec parSpec = new PartitionSpec();
-    PartitionOp par = (PartitionOp) operatorFactory.getTupleTupleOperator(parSpec);
-    operators.put(parSpec.getId(), par);
-    SystemStreamSpec sstrmSpec = new SystemStreamSpec(this.sqlContext);
+    PartitionOp par = (PartitionOp) operatorFactory.getTupleOperator(parSpec);
+    // 5. finally, the system stream output operator
+    SystemStreamSpec sstrmSpec = new SystemStreamSpec();
     SystemStreamOp sysStream = (SystemStreamOp) operatorFactory.getTupleOperator(sstrmSpec);
-    operators.put(sstrmSpec.getId(), sysStream);
 
-    store = new SQLRelationStore(context);
+    // Now initialize all operators
+    this.initCntx = new SqlContextManager(context);
+    wnd1.init(this.initCntx);
+    wnd2.init(this.initCntx);
+    join.init(this.initCntx);
+    istream.init(this.initCntx);
+    par.init(this.initCntx);
+    sysStream.init(this.initCntx);
 
-    wnd1.init(store);
-    wnd2.init(store);
-    join.init(store);
-    istream.init(store);
-    par.init(store);
-    sysStream.init(store);
-
-    wnd1.setNextOp(join);
-    wnd2.setNextOp(join);
-    join.setNextOp(istream);
-    istream.setNextOp(par);
-    par.setNextOp(sysStream);
+    // Finally, initialize the operator routing context
+    this.rteCntx = new SqlRoutingContextManager();
+    // 1. set two system input operators (i.e. two window operators)
+    this.rteCntx.setSystemInputOperator(wnd1);
+    this.rteCntx.setSystemInputOperator(wnd2);
+    // 2. connect join operator to both window operators
+    this.rteCntx.setNextRelationOperator(wnd1.getId(), join);
+    this.rteCntx.setNextRelationOperator(wnd2.getId(), join);
+    // 3. connect stream operator to the join operator
+    this.rteCntx.setNextRelationOperator(join.getId(), istream);
+    // 4. connect re-partition operator to the stream operator
+    this.rteCntx.setNextTupleOperator(istream.getId(), par);
+    // 5. finally, connect the system stream output operator to the re-partition operator
+    this.rteCntx.setNextTupleOperator(par.getId(), sysStream);
   }
 }

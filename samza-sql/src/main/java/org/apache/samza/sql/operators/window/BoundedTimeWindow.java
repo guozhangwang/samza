@@ -3,19 +3,18 @@ package org.apache.samza.sql.operators.window;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.data.RelationStore;
+import org.apache.samza.sql.api.data.StreamSpec;
 import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.operators.TupleRelationOperator;
+import org.apache.samza.sql.api.operators.TupleOperator;
+import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
+import org.apache.samza.sql.api.task.InitSystemContext;
 
 
-public class BoundedTimeWindow implements TupleRelationOperator {
+public class BoundedTimeWindow implements TupleOperator {
 
   private final WindowSpec spec;
 
   private Relation relation = null;
-
-  private RelationOperator nextOp = null;
 
   private List<WindowState> windowStates = null;
 
@@ -25,19 +24,19 @@ public class BoundedTimeWindow implements TupleRelationOperator {
   }
 
   @Override
-  public void process(Tuple tuple) throws Exception {
+  public void process(Tuple tuple, OperatorRoutingContext context) throws Exception {
     // TODO Process each incoming tuple
     // for each tuple, this will evaluate the incoming tuple and update the window states.
     // If the window states allow generating output, calculate the delta changes in
     // the window relation and execute the relation operation <code>nextOp</code>
     updateWindow(tuple);
-    processWindowChanges();
+    processWindowChanges(context);
   }
 
-  private void processWindowChanges() throws Exception {
+  private void processWindowChanges(OperatorRoutingContext context) throws Exception {
     // TODO Auto-generated method stub
     if (windowStateChange()) {
-      this.nextOp.process(getWindowChanges());
+      context.sendToNextRelationOperator(this.spec.getId(), getWindowChanges());
     }
   }
 
@@ -58,30 +57,37 @@ public class BoundedTimeWindow implements TupleRelationOperator {
   }
 
   @Override
-  public void timeout(long currentSystemNano) throws Exception {
+  public void timeout(long currentSystemNano, OperatorRoutingContext context) throws Exception {
     // TODO timeout needs to be implemented per window spec, default is doing nothing
     updateWindowTimeout();
-    processWindowChanges();
-    this.nextOp.timeout(currentSystemNano);
+    processWindowChanges(context);
+    context.sendToNextTimeoutOperator(this.spec.getId(), currentSystemNano);
   }
 
   private void updateWindowTimeout() {
     // TODO Auto-generated method stub
-
+    // The window states are updated here
+    // And the correpsonding deltaChanges is also calculated here.
   }
 
   @Override
-  public void init(RelationStore store) throws Exception {
+  public void init(InitSystemContext initContext) throws Exception {
     // TODO Auto-generated method stub
     if (this.relation == null) {
-      this.relation = store.getRelation(this.spec.getOutputSpec());
-      this.windowStates = store.getWindowStates(this.spec.getId());
+      this.relation = initContext.getRelation(this.spec.getWindowedRelationSpec());
+      this.windowStates = initContext.getWindowStates(this.spec.getId());
     }
   }
 
   @Override
-  public void setNextOp(RelationOperator nextOp) throws Exception {
+  public String getId() {
     // TODO Auto-generated method stub
-    this.nextOp = nextOp;
+    return this.spec.getId();
+  }
+
+  @Override
+  public List<StreamSpec> getInputTuples() {
+    // TODO Auto-generated method stub
+    return this.spec.getInputSpec();
   }
 }

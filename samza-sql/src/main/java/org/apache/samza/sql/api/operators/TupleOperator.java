@@ -1,6 +1,10 @@
 package org.apache.samza.sql.api.operators;
 
+import java.util.List;
+
+import org.apache.samza.sql.api.data.StreamSpec;
 import org.apache.samza.sql.api.data.Tuple;
+import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
 
 
 /**
@@ -20,6 +24,7 @@ public interface TupleOperator extends Operator {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void process(Tuple tuple) throws Exception;
+  public void process(Tuple tuple, OperatorRoutingContext context) throws Exception;
 
+  public List<StreamSpec> getInputTuples();
 }

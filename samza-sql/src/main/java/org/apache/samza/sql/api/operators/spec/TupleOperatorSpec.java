@@ -1,5 +1,7 @@
 package org.apache.samza.sql.api.operators.spec;
 
+import java.util.List;
+
 import org.apache.samza.sql.api.data.StreamSpec;
 
 
@@ -16,5 +18,5 @@ public interface TupleOperatorSpec extends OperatorSpec {
    * @return
    *     The specification object of the input stream
    */
-  public StreamSpec getInputSpec();
+  public List<StreamSpec> getInputSpec();
 }

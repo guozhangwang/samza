@@ -1,6 +1,10 @@
 package org.apache.samza.sql.api.operators;
 
+import java.util.List;
+
 import org.apache.samza.sql.api.data.Relation;
+import org.apache.samza.sql.api.data.RelationSpec;
+import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
 
 
 /**
@@ -25,6 +29,7 @@ public interface RelationOperator extends Operator {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void process(Relation deltaRelation) throws Exception;
+  public void process(Relation deltaRelation, OperatorRoutingContext context) throws Exception;
 
+  public List<RelationSpec> getInputRelations();
 }

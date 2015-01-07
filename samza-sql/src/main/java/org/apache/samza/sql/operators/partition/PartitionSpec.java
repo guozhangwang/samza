@@ -1,10 +1,12 @@
 package org.apache.samza.sql.operators.partition;
 
+import java.util.List;
+
 import org.apache.samza.sql.api.data.StreamSpec;
-import org.apache.samza.sql.api.operators.spec.TupleTupleSpec;
+import org.apache.samza.sql.api.operators.spec.TupleOperatorSpec;
 
 
-public class PartitionSpec implements TupleTupleSpec {
+public class PartitionSpec implements TupleOperatorSpec {
 
   @Override
   public String getId() {
@@ -13,15 +15,8 @@ public class PartitionSpec implements TupleTupleSpec {
   }
 
   @Override
-  public StreamSpec getInputSpec() {
+  public List<StreamSpec> getInputSpec() {
     // TODO Auto-generated method stub
     return null;
   }
-
-  @Override
-  public StreamSpec getOutputSpec() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
 }

@@ -4,12 +4,12 @@ import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.RelationSpec;
-import org.apache.samza.sql.api.data.RelationStore;
 import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.operators.RelationRelationOperator;
+import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
+import org.apache.samza.sql.api.task.InitSystemContext;
 
 
-public class Join implements RelationRelationOperator {
+public class Join implements RelationOperator {
 
   private final JoinSpec spec;
 
@@ -17,29 +17,9 @@ public class Join implements RelationRelationOperator {
 
   private Relation output = null;
 
-  private RelationOperator nextOp = null;
-
   public Join(JoinSpec spec) {
     // TODO Auto-generated constructor stub
     this.spec = spec;
-  }
-
-  @Override
-  public void init(RelationStore store) throws Exception {
-    // TODO Auto-generated method stub
-    for (RelationSpec relationSpec : this.spec.getInputSpecs()) {
-      inputs.add(store.getRelation(relationSpec));
-    }
-    this.output = store.getRelation(this.spec.getOutputSpec());
-  }
-
-  @Override
-  public void timeout(long currentSystemNano) throws Exception {
-    // TODO Auto-generated method stub
-    if (hasPendingChanges()) {
-      this.nextOp.process(getPendingChanges());
-    }
-    this.nextOp.timeout(currentSystemNano);
   }
 
   private boolean hasPendingChanges() {
@@ -51,16 +31,6 @@ public class Join implements RelationRelationOperator {
     // TODO Auto-generated method stub
     // return any pending changes that have not been processed yet
     return null;
-  }
-
-  @Override
-  public void process(Relation deltaRelation) throws Exception {
-    // TODO Auto-generated method stub
-    // calculate join based on the input <code>deltaRelation</code>
-    join(deltaRelation);
-    if (hasOutputChanges()) {
-      this.nextOp.process(getOutputChanges());
-    }
   }
 
   private Relation getOutputChanges() {
@@ -82,9 +52,42 @@ public class Join implements RelationRelationOperator {
   }
 
   @Override
-  public void setNextOp(RelationOperator nextOp) throws Exception {
+  public void init(InitSystemContext initContext) throws Exception {
     // TODO Auto-generated method stub
-    this.nextOp = nextOp;
+    for (RelationSpec relationSpec : this.spec.getInputSpecs()) {
+      inputs.add(initContext.getRelation(relationSpec));
+    }
+    this.output = initContext.getRelation(this.spec.getJoinRelation());
   }
 
+  @Override
+  public void timeout(long currentSystemNano, OperatorRoutingContext context) throws Exception {
+    // TODO Auto-generated method stub
+    if (hasPendingChanges()) {
+      context.sendToNextRelationOperator(this.spec.getId(), getPendingChanges());
+    }
+    context.sendToNextTimeoutOperator(this.spec.getId(), currentSystemNano);
+  }
+
+  @Override
+  public void process(Relation deltaRelation, OperatorRoutingContext context) throws Exception {
+    // TODO Auto-generated method stub
+    // calculate join based on the input <code>deltaRelation</code>
+    join(deltaRelation);
+    if (hasOutputChanges()) {
+      context.sendToNextRelationOperator(this.spec.getId(), getOutputChanges());
+    }
+  }
+
+  @Override
+  public String getId() {
+    // TODO Auto-generated method stub
+    return this.spec.getId();
+  }
+
+  @Override
+  public List<RelationSpec> getInputRelations() {
+    // TODO Auto-generated method stub
+    return this.spec.getInputSpecs();
+  }
 }

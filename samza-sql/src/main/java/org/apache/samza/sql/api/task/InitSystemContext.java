@@ -1,19 +1,21 @@
-package org.apache.samza.sql.api.data;
+package org.apache.samza.sql.api.task;
 
 import java.util.List;
 
+import org.apache.samza.sql.api.data.Relation;
+import org.apache.samza.sql.api.data.RelationSpec;
 import org.apache.samza.sql.operators.window.WindowState;
 
 
 /**
- * This class implements a <code>RelationStore</code> to access various types of states needed in the stream SQL operators,
+ * This class implements a <code>SqlContextManager</code> to access various types of states needed in the stream SQL operators,
  * including relations generated as intermediate results in the SQL query, the windowing operators' internal window states,
  * and the relations that are stored and backed in external or local databases.
  *
  * @author Yi Pan {yipan@linkedin.com}
  *
  */
-public interface RelationStore {
+public interface InitSystemContext {
 
   /**
    * get a relation based on its specification from the underlying storage layer/changelog
