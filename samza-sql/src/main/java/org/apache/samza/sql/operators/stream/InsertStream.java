@@ -1,13 +1,31 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.samza.sql.operators.stream;
 
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.data.RelationSpec;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
+import org.apache.samza.sql.api.operators.spec.RelationOperatorSpec;
 import org.apache.samza.sql.api.task.InitSystemContext;
 
 
@@ -48,15 +66,15 @@ public class InsertStream implements RelationOperator {
   }
 
   @Override
-  public String getId() {
+  public RelationOperatorSpec getSpec() {
     // TODO Auto-generated method stub
-    return this.spec.getId();
+    return this.spec;
   }
 
   @Override
-  public List<RelationSpec> getInputRelations() {
+  public String getId() {
     // TODO Auto-generated method stub
-    return this.spec.getInputSpecs();
+    return this.spec.getId();
   }
 
 }

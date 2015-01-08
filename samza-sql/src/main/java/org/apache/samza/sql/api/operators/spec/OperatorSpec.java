@@ -1,19 +1,11 @@
 package org.apache.samza.sql.api.operators.spec;
 
-/**
- * This class defines a generic interface for specification of an operator
- *
- * @author Yi Pan {yipan@linkedin.com}
- *
- */
 public interface OperatorSpec {
-
   /**
-   * The unique identifier of the operator in a task.
+   * interface method that returns the unique ID of the operator in a task
    *
    * @return
-   *     The unique identifier of the operator
+   *     the unique ID of the <code>Operator</code> object
    */
   public String getId();
-
 }

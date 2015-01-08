@@ -17,28 +17,16 @@
  * under the License.
  */
 
-package org.apache.samza.sql.operators.window;
+package org.apache.samza.sql.api.task;
 
-public class WindowState {
-  public String startOffset = null;
-  public String endOffset = null;
-  public boolean isClosed = false;
+import org.apache.samza.task.MessageCollector;
+import org.apache.samza.task.TaskCoordinator;
 
-  public void open(String offset) {
-    this.isClosed = false;
-    this.startOffset = offset;
-  }
 
-  public void close(String offset) {
-    this.endOffset = offset;
-    this.isClosed = true;
-  }
+public interface RuntimeSystemContext {
 
-  public void advanceTo(String offset) {
-    this.endOffset = offset;
-  }
+  public MessageCollector getMessageCollector();
 
-  public boolean isClosed() {
-    return this.isClosed;
-  }
+  public TaskCoordinator getTaskCoordinator();
+
 }
