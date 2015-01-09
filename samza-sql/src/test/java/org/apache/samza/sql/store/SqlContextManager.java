@@ -22,7 +22,6 @@ package org.apache.samza.sql.store;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.data.RelationSpec;
 import org.apache.samza.sql.api.task.InitSystemContext;
 import org.apache.samza.sql.operators.window.WindowState;
 import org.apache.samza.task.TaskContext;
@@ -38,7 +37,7 @@ public class SqlContextManager implements InitSystemContext {
   }
 
   @Override
-  public Relation getRelation(RelationSpec spec) {
+  public Relation getRelation(String spec) {
     // TODO Auto-generated method stub
     return null;
   }

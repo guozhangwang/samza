@@ -1,7 +1,6 @@
 package org.apache.samza.sql.api.operators;
 
-import org.apache.samza.sql.api.operators.spec.RelationOperatorSpec;
-import org.apache.samza.sql.api.operators.spec.TupleOperatorSpec;
+import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 
 
 /**
@@ -24,7 +23,7 @@ public interface SqlOperatorFactory {
    * @return
    *     The relation-to-relation operator object
    */
-  public RelationOperator getRelationOperator(RelationOperatorSpec spec);
+  public RelationOperator getRelationOperator(OperatorSpec spec);
 
   /**
    * Interface method to create/get the tuple operator object
@@ -34,6 +33,6 @@ public interface SqlOperatorFactory {
    * @return
    *     The tuple operator object
    */
-  public TupleOperator getTupleOperator(TupleOperatorSpec spec);
+  public TupleOperator getTupleOperator(OperatorSpec spec);
 
 }

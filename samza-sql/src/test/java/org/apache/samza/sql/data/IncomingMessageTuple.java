@@ -19,7 +19,6 @@
 
 package org.apache.samza.sql.data;
 
-import org.apache.samza.sql.api.data.StreamSpec;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.system.IncomingMessageEnvelope;
 
@@ -52,9 +51,9 @@ public class IncomingMessageTuple implements Tuple {
   }
 
   @Override
-  public StreamSpec getStreamSpec() {
+  public String getStreamName() {
     // TODO Auto-generated method stub
-    return null;
+    return this.imsg.getSystemStreamPartition().getSystemStream().toString();
   }
 
 }

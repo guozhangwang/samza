@@ -22,14 +22,13 @@ package org.apache.samza.sql.operators.relation;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.data.RelationSpec;
 import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
-import org.apache.samza.sql.api.operators.spec.RelationOperatorSpec;
 import org.apache.samza.sql.api.task.InitSystemContext;
+import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.sql.operators.factory.SimpleOperator;
 
 
-public class Join implements RelationOperator {
+public class Join extends SimpleOperator implements RelationOperator {
 
   private final JoinSpec spec;
 
@@ -39,7 +38,13 @@ public class Join implements RelationOperator {
 
   public Join(JoinSpec spec) {
     // TODO Auto-generated constructor stub
+    super(spec);
     this.spec = spec;
+  }
+
+  public Join(String id, List<String> joinIns, String joinOut, List<String> joinKeys) {
+    super(new JoinSpec(id, joinIns, joinOut, joinKeys));
+    this.spec = (JoinSpec) this.getSpec();
   }
 
   private boolean hasPendingChanges() {
@@ -74,14 +79,14 @@ public class Join implements RelationOperator {
   @Override
   public void init(InitSystemContext initContext) throws Exception {
     // TODO Auto-generated method stub
-    for (RelationSpec relationSpec : this.spec.getInputSpecs()) {
-      inputs.add(initContext.getRelation(relationSpec));
+    for (String relation : this.spec.getInputNames()) {
+      inputs.add(initContext.getRelation(relation));
     }
-    this.output = initContext.getRelation(this.spec.getOutputRelation());
+    this.output = initContext.getRelation(this.spec.getOutputName());
   }
 
   @Override
-  public void timeout(long currentSystemNano, OperatorRoutingContext context) throws Exception {
+  public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
     // TODO Auto-generated method stub
     if (hasPendingChanges()) {
       context.sendToNextRelationOperator(this.spec.getId(), getPendingChanges());
@@ -90,24 +95,12 @@ public class Join implements RelationOperator {
   }
 
   @Override
-  public void process(Relation deltaRelation, OperatorRoutingContext context) throws Exception {
+  public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception {
     // TODO Auto-generated method stub
     // calculate join based on the input <code>deltaRelation</code>
     join(deltaRelation);
     if (hasOutputChanges()) {
       context.sendToNextRelationOperator(this.spec.getId(), getOutputChanges());
     }
-  }
-
-  @Override
-  public RelationOperatorSpec getSpec() {
-    // TODO Auto-generated method stub
-    return this.spec;
-  }
-
-  @Override
-  public String getId() {
-    // TODO Auto-generated method stub
-    return this.spec.getId();
   }
 }

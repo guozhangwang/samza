@@ -22,45 +22,38 @@ package org.apache.samza.sql.operators.window;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.samza.sql.api.data.RelationSpec;
-import org.apache.samza.sql.api.data.StreamSpec;
-import org.apache.samza.sql.api.operators.spec.TupleOperatorSpec;
+import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 
 
-public class WindowSpec implements TupleOperatorSpec {
-
-  private final String wndId;
+public class WindowSpec implements OperatorSpec {
+  private final String id;
+  private final List<String> inputs = new ArrayList<String>();
+  private final String output;
   private final int wndSizeSec;
-  private final List<StreamSpec> inputStrms = new ArrayList<StreamSpec>();
-  private final RelationSpec wndRelSpec;
 
-  public WindowSpec(String wndId, int lengthSec, StreamSpec input, RelationSpec output) {
-    // create a fixed size window
-    this.wndId = wndId;
+  public WindowSpec(String id, int lengthSec, String input, String output) {
+    this.id = id;
     this.wndSizeSec = lengthSec;
-    this.inputStrms.add(input);
-    this.wndRelSpec = output;
-  }
-
-  @Override
-  public List<StreamSpec> getInputSpecs() {
-    // TODO Auto-generated method stub
-    return this.inputStrms;
+    this.inputs.add(input);
+    this.output = output;
   }
 
   @Override
   public String getId() {
     // TODO Auto-generated method stub
-    return this.wndId;
+    return this.id;
   }
 
-  public RelationSpec getWindowedRelationSpec() {
+  @Override
+  public List<String> getInputNames() {
     // TODO Auto-generated method stub
-    return this.wndRelSpec;
+    return this.inputs;
   }
 
-  public int getWindowSizeSec() {
-    return this.wndSizeSec;
+  @Override
+  public String getOutputName() {
+    // TODO Auto-generated method stub
+    return this.output;
   }
 
 }

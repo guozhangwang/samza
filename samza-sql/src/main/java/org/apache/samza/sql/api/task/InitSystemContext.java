@@ -22,7 +22,6 @@ package org.apache.samza.sql.api.task;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.data.RelationSpec;
 import org.apache.samza.sql.operators.window.WindowState;
 
 
@@ -42,7 +41,7 @@ public interface InitSystemContext {
    * @return
    *     the relation object that is corresponding to the name
    */
-  public Relation getRelation(RelationSpec spec);
+  public Relation getRelation(String relationName);
 
   /**
    * get a list of window states based on the <code>wndName</code> from the underlying storage layer/changelog

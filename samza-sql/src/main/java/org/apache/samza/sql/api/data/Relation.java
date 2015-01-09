@@ -75,10 +75,18 @@ public interface Relation {
   public Iterator<Tuple> iterator();
 
   /**
-   * Returns the specification of this relation
+   * get the primary key field name defined for this table
    *
    * @return
-   *     the specification of the relation
+   *     the name of the primary key field
    */
-  public RelationSpec getSpec();
+  public String getPrimaryKey();
+
+  /**
+   * get the name of the relation created by CREATE TABLE
+   *
+   * @return
+   *     the relation name
+   */
+  public String getName();
 }

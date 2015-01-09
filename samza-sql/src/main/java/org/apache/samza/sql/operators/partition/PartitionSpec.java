@@ -22,19 +22,22 @@ package org.apache.samza.sql.operators.partition;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.samza.sql.api.data.StreamSpec;
-import org.apache.samza.sql.api.operators.spec.TupleOperatorSpec;
+import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 
 
-public class PartitionSpec implements TupleOperatorSpec {
+public class PartitionSpec implements OperatorSpec {
   private final String id;
-  private final List<StreamSpec> inputs = new ArrayList<StreamSpec>();
-  private final StreamSpec output;
+  private final List<String> inputs = new ArrayList<String>();
+  private final String output;
+  private final String parKey;
+  private final int parNum;
 
-  public PartitionSpec(String id, StreamSpec input, StreamSpec output) {
+  public PartitionSpec(String id, String input, String output, String parKey, int parNum) {
     this.id = id;
     this.inputs.add(input);
     this.output = output;
+    this.parKey = parKey;
+    this.parNum = parNum;
   }
 
   @Override
@@ -44,12 +47,22 @@ public class PartitionSpec implements TupleOperatorSpec {
   }
 
   @Override
-  public List<StreamSpec> getInputSpecs() {
+  public List<String> getInputNames() {
     // TODO Auto-generated method stub
     return this.inputs;
   }
 
-  public StreamSpec getOutputStream() {
+  @Override
+  public String getOutputName() {
+    // TODO Auto-generated method stub
     return this.output;
+  }
+
+  public String getParKey() {
+    return this.parKey;
+  }
+
+  public int getParNum() {
+    return this.parNum;
   }
 }

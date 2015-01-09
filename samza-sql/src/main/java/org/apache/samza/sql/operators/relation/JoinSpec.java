@@ -22,25 +22,21 @@ package org.apache.samza.sql.operators.relation;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.samza.sql.api.data.RelationSpec;
-import org.apache.samza.sql.api.operators.spec.RelationOperatorSpec;
+import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 
 
-public class JoinSpec implements RelationOperatorSpec {
+public class JoinSpec implements OperatorSpec {
   private final String id;
-  private final List<RelationSpec> inputs = new ArrayList<RelationSpec>();
-  private final RelationSpec output;
+  private final List<String> inputs = new ArrayList<String>();
+  private final String output;
+  private final List<String> joinKeys = new ArrayList<String>();
 
-  public JoinSpec(String id, List<RelationSpec> inputs, RelationSpec output) {
+  public JoinSpec(String id, List<String> joinIns, String joinOut, List<String> joinKeys) {
+    // TODO Auto-generated constructor stub
     this.id = id;
-    this.inputs.addAll(inputs);
-    this.output = output;
-  }
-
-  @Override
-  public List<RelationSpec> getInputSpecs() {
-    // TODO Auto-generated method stub
-    return this.inputs;
+    this.inputs.addAll(joinIns);
+    this.output = joinOut;
+    this.joinKeys.addAll(joinKeys);
   }
 
   @Override
@@ -49,7 +45,19 @@ public class JoinSpec implements RelationOperatorSpec {
     return this.id;
   }
 
-  public RelationSpec getOutputRelation() {
+  @Override
+  public List<String> getInputNames() {
+    // TODO Auto-generated method stub
+    return this.inputs;
+  }
+
+  @Override
+  public String getOutputName() {
+    // TODO Auto-generated method stub
     return this.output;
+  }
+
+  public List<String> getJoinKeys() {
+    return this.joinKeys;
   }
 }

@@ -22,21 +22,26 @@ package org.apache.samza.sql.operators.output;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.samza.sql.api.data.StreamSpec;
-import org.apache.samza.sql.api.operators.spec.TupleOperatorSpec;
+import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 import org.apache.samza.system.SystemStream;
 
 
-public class SystemStreamSpec implements TupleOperatorSpec {
+public class SystemStreamSpec implements OperatorSpec {
   private final String id;
-  private final List<StreamSpec> inputs = new ArrayList<StreamSpec>();
+  private final List<String> inputs = new ArrayList<String>();
   private final SystemStream output;
 
-  public SystemStreamSpec(String id, StreamSpec input, SystemStream output) {
+  public SystemStreamSpec(String id, String input, SystemStream output) {
     // TODO Auto-generated constructor stub
     this.id = id;
     this.inputs.add(input);
     this.output = output;
+  }
+
+  @Override
+  public String getOutputName() {
+    // TODO Auto-generated method stub
+    return this.output.toString();
   }
 
   @Override
@@ -46,7 +51,7 @@ public class SystemStreamSpec implements TupleOperatorSpec {
   }
 
   @Override
-  public List<StreamSpec> getInputSpecs() {
+  public List<String> getInputNames() {
     // TODO Auto-generated method stub
     return this.inputs;
   }

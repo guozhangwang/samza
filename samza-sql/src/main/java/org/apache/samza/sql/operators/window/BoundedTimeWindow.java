@@ -22,16 +22,14 @@ package org.apache.samza.sql.operators.window;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.data.RelationSpec;
-import org.apache.samza.sql.api.data.StreamSpec;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
-import org.apache.samza.sql.api.operators.spec.TupleOperatorSpec;
 import org.apache.samza.sql.api.task.InitSystemContext;
+import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.sql.operators.factory.SimpleOperator;
 
 
-public class BoundedTimeWindow implements TupleOperator {
+public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
 
   private final WindowSpec spec;
 
@@ -41,15 +39,17 @@ public class BoundedTimeWindow implements TupleOperator {
 
   public BoundedTimeWindow(WindowSpec spec) {
     // TODO Auto-generated constructor stub
+    super(spec);
     this.spec = spec;
   }
 
-  public BoundedTimeWindow(String wndId, int lengthSec, StreamSpec input, RelationSpec output) {
-    this.spec = new WindowSpec(wndId, lengthSec, input, output);
+  public BoundedTimeWindow(String wndId, int lengthSec, String input, String output) {
+    super(new WindowSpec(wndId, lengthSec, input, output));
+    this.spec = (WindowSpec) super.getSpec();
   }
 
   @Override
-  public void process(Tuple tuple, OperatorRoutingContext context) throws Exception {
+  public void process(Tuple tuple, RuntimeSystemContext context) throws Exception {
     // TODO Process each incoming tuple
     // for each tuple, this will evaluate the incoming tuple and update the window states.
     // If the window states allow generating output, calculate the delta changes in
@@ -58,7 +58,7 @@ public class BoundedTimeWindow implements TupleOperator {
     processWindowChanges(context);
   }
 
-  private void processWindowChanges(OperatorRoutingContext context) throws Exception {
+  private void processWindowChanges(RuntimeSystemContext context) throws Exception {
     // TODO Auto-generated method stub
     if (windowStateChange()) {
       context.sendToNextRelationOperator(this.spec.getId(), getWindowChanges());
@@ -82,7 +82,7 @@ public class BoundedTimeWindow implements TupleOperator {
   }
 
   @Override
-  public void timeout(long currentSystemNano, OperatorRoutingContext context) throws Exception {
+  public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
     // TODO timeout needs to be implemented per window spec, default is doing nothing
     updateWindowTimeout();
     processWindowChanges(context);
@@ -99,20 +99,8 @@ public class BoundedTimeWindow implements TupleOperator {
   public void init(InitSystemContext initContext) throws Exception {
     // TODO Auto-generated method stub
     if (this.relation == null) {
-      this.relation = initContext.getRelation(this.spec.getWindowedRelationSpec());
+      this.relation = initContext.getRelation(this.spec.getOutputName());
       this.windowStates = initContext.getWindowStates(this.spec.getId());
     }
-  }
-
-  @Override
-  public TupleOperatorSpec getSpec() {
-    // TODO Auto-generated method stub
-    return this.spec;
-  }
-
-  @Override
-  public String getId() {
-    // TODO Auto-generated method stub
-    return this.spec.getId();
   }
 }

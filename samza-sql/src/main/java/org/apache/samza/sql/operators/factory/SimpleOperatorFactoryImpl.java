@@ -22,8 +22,7 @@ package org.apache.samza.sql.operators.factory;
 import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.operators.SqlOperatorFactory;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.operators.spec.RelationOperatorSpec;
-import org.apache.samza.sql.api.operators.spec.TupleOperatorSpec;
+import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 import org.apache.samza.sql.operators.output.SystemStreamOp;
 import org.apache.samza.sql.operators.output.SystemStreamSpec;
 import org.apache.samza.sql.operators.partition.PartitionOp;
@@ -44,7 +43,7 @@ import org.apache.samza.sql.operators.window.WindowSpec;
 public class SimpleOperatorFactoryImpl implements SqlOperatorFactory {
 
   @Override
-  public RelationOperator getRelationOperator(RelationOperatorSpec spec) {
+  public RelationOperator getRelationOperator(OperatorSpec spec) {
     if (spec instanceof JoinSpec) {
       return new Join((JoinSpec) spec);
     } else if (spec instanceof InsertStreamSpec) {
@@ -54,7 +53,7 @@ public class SimpleOperatorFactoryImpl implements SqlOperatorFactory {
   }
 
   @Override
-  public TupleOperator getTupleOperator(TupleOperatorSpec spec) {
+  public TupleOperator getTupleOperator(OperatorSpec spec) {
     // TODO Auto-generated method stub
     if (spec instanceof SystemStreamSpec) {
       return new SystemStreamOp((SystemStreamSpec) spec);

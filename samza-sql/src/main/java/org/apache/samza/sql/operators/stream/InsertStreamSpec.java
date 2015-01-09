@@ -22,17 +22,15 @@ package org.apache.samza.sql.operators.stream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.samza.sql.api.data.RelationSpec;
-import org.apache.samza.sql.api.data.StreamSpec;
-import org.apache.samza.sql.api.operators.spec.RelationOperatorSpec;
+import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 
 
-public class InsertStreamSpec implements RelationOperatorSpec {
+public class InsertStreamSpec implements OperatorSpec {
   private final String id;
-  private final List<RelationSpec> inputs = new ArrayList<RelationSpec>();
-  private final StreamSpec output;
+  private final List<String> inputs = new ArrayList<String>();
+  private final String output;
 
-  public InsertStreamSpec(String id, RelationSpec input, StreamSpec output) {
+  public InsertStreamSpec(String id, String input, String output) {
     this.id = id;
     this.inputs.add(input);
     this.output = output;
@@ -45,18 +43,19 @@ public class InsertStreamSpec implements RelationOperatorSpec {
   }
 
   @Override
-  public List<RelationSpec> getInputSpecs() {
+  public List<String> getInputNames() {
     // TODO Auto-generated method stub
     return this.inputs;
   }
 
-  public RelationSpec getInputRelation() {
-    return this.getInputSpecs().get(0);
-  }
-
-  public StreamSpec getOutputStream() {
+  @Override
+  public String getOutputName() {
     // TODO Auto-generated method stub
     return this.output;
+  }
+
+  public String getInputRelation() {
+    return this.getInputNames().get(0);
   }
 
 }

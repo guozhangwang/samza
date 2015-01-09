@@ -20,8 +20,7 @@
 package org.apache.samza.sql.api.operators;
 
 import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
-import org.apache.samza.sql.api.operators.spec.TupleOperatorSpec;
+import org.apache.samza.sql.api.task.RuntimeSystemContext;
 
 
 /**
@@ -38,13 +37,6 @@ public interface TupleOperator extends Operator {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void process(Tuple tuple, OperatorRoutingContext context) throws Exception;
+  public void process(Tuple tuple, RuntimeSystemContext context) throws Exception;
 
-  /**
-   * Get the specification of the input stream of this operator
-   *
-   * @return
-   *     The specification object of the input stream
-   */
-  public TupleOperatorSpec getSpec();
 }

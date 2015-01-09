@@ -20,23 +20,20 @@
 package org.apache.samza.sql.operators.routing;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.commons.collections.map.MultiValueMap;
-import org.apache.samza.sql.api.data.RelationSpec;
-import org.apache.samza.sql.api.data.StreamSpec;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
 
 
-public class AutoRoutingContext implements OperatorRoutingContext {
+public class SimpleRoutingContext implements OperatorRoutingContext {
   private Map<String, Operator> operators = new HashMap<String, Operator>();
   private Map<String, Operator> nextOps = new HashMap<String, Operator>();
   private MultiValueMap sysInputOps = new MultiValueMap();
-  private RuntimeSystemContext sysCntx = null;
 
   private void addOperator(Operator op) {
     operators.put(op.getId(), op);
@@ -47,7 +44,7 @@ public class AutoRoutingContext implements OperatorRoutingContext {
     // TODO Auto-generated method stub
     addOperator(inputOp);
     // add the input operator to all input stream spec
-    for (StreamSpec spec : inputOp.getSpec().getInputSpecs()) {
+    for (String spec : inputOp.getSpec().getInputNames()) {
       sysInputOps.put(spec, inputOp);
     }
   }
@@ -57,7 +54,7 @@ public class AutoRoutingContext implements OperatorRoutingContext {
     // TODO Auto-generated method stub
     addOperator(inputOp);
     // add the input operator to all input relation spec
-    for (RelationSpec spec : inputOp.getSpec().getInputSpecs()) {
+    for (String spec : inputOp.getSpec().getInputNames()) {
       sysInputOps.put(spec, inputOp);
     }
   }
@@ -109,15 +106,8 @@ public class AutoRoutingContext implements OperatorRoutingContext {
   }
 
   @Override
-  public void setRuntimeContext(RuntimeSystemContext context) throws Exception {
+  public Iterator<Operator> iterator() {
     // TODO Auto-generated method stub
-    this.sysCntx = context;
+    return operators.values().iterator();
   }
-
-  @Override
-  public RuntimeSystemContext getRuntimeContext() {
-    // TODO Auto-generated method stub
-    return this.sysCntx;
-  }
-
 }

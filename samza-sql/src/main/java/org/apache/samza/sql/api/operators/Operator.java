@@ -19,8 +19,9 @@
 
 package org.apache.samza.sql.api.operators;
 
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
+import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 import org.apache.samza.sql.api.task.InitSystemContext;
+import org.apache.samza.sql.api.task.RuntimeSystemContext;
 
 
 /**
@@ -53,7 +54,7 @@ public interface Operator {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void timeout(long currentSystemNano, OperatorRoutingContext context) throws Exception;
+  public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception;
 
   /**
    * interface method to get the unique ID of the operator conveniently
@@ -62,5 +63,13 @@ public interface Operator {
    *     the unique ID of the operator
    */
   public String getId();
+
+  /**
+   * Access method to the specification of this <code>RelationOperator</code>
+   *
+   * @return
+   *     A list of <code>RelationSpec</code> that is the input of the corresponding operator
+   */
+  public OperatorSpec getSpec();
 
 }

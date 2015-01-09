@@ -20,8 +20,7 @@
 package org.apache.samza.sql.api.operators;
 
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
-import org.apache.samza.sql.api.operators.spec.RelationOperatorSpec;
+import org.apache.samza.sql.api.task.RuntimeSystemContext;
 
 
 /**
@@ -54,13 +53,6 @@ public interface RelationOperator extends Operator {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void process(Relation deltaRelation, OperatorRoutingContext context) throws Exception;
+  public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception;
 
-  /**
-   * Access method to the specification of this <code>RelationOperator</code>
-   *
-   * @return
-   *     A list of <code>RelationSpec</code> that is the input of the corresponding operator
-   */
-  public RelationOperatorSpec getSpec();
 }

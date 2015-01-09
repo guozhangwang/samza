@@ -51,10 +51,10 @@ public interface Tuple {
   Object getField(String name);
 
   /**
-   * Access method to get the specification of the stream that the tuple is from
+   * get the name of the tuple
    *
    * @return
-   *     Specification of the stream
+   *     the stream name
    */
-  StreamSpec getStreamSpec();
+  public String getStreamName();
 }

@@ -19,6 +19,8 @@
 
 package org.apache.samza.sql.api.task;
 
+import org.apache.samza.sql.api.data.Relation;
+import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskCoordinator;
 
@@ -28,5 +30,11 @@ public interface RuntimeSystemContext {
   public MessageCollector getMessageCollector();
 
   public TaskCoordinator getTaskCoordinator();
+
+  public void sendToNextRelationOperator(String currentOpId, Relation deltaRelation) throws Exception;
+
+  public void sendToNextTupleOperator(String currentOpId, Tuple tuple) throws Exception;
+
+  public void sendToNextTimeoutOperator(String currentOpId, long currentSystemNano) throws Exception;
 
 }

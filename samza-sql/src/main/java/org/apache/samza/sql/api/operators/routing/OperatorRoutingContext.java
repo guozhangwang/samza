@@ -19,13 +19,12 @@
 
 package org.apache.samza.sql.api.operators.routing;
 
+import java.util.Iterator;
+
 import org.apache.commons.collections.map.MultiValueMap;
-import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
 
 
 public interface OperatorRoutingContext {
@@ -34,10 +33,6 @@ public interface OperatorRoutingContext {
   public void setSystemInputOperator(RelationOperator inputOp) throws Exception;
 
   public MultiValueMap getSystemInputOps();
-
-  public void setRuntimeContext(RuntimeSystemContext context) throws Exception;
-
-  public RuntimeSystemContext getRuntimeContext();
 
   public void setNextRelationOperator(String currentOpId, RelationOperator nextOp) throws Exception;
 
@@ -49,16 +44,6 @@ public interface OperatorRoutingContext {
 
   public Operator getNextTimeoutOperator(String currentOpId);
 
-  public default void sendToNextRelationOperator(String currentOpId, Relation deltaRelation) throws Exception {
-    this.getNextRelationOperator(currentOpId).process(deltaRelation, this);
-  };
-
-  public default void sendToNextTupleOperator(String currentOpId, Tuple tuple) throws Exception {
-    this.getNextTupleOperator(currentOpId).process(tuple, this);
-  };
-
-  public default void sendToNextTimeoutOperator(String currentOpId, long currentSystemNano) throws Exception {
-    this.getNextTimeoutOperator(currentOpId).timeout(currentSystemNano, this);
-  }
+  public Iterator<Operator> iterator();
 
 }

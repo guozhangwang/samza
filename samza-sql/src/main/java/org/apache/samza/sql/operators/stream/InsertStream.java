@@ -24,23 +24,24 @@ import java.util.Iterator;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
-import org.apache.samza.sql.api.operators.spec.RelationOperatorSpec;
 import org.apache.samza.sql.api.task.InitSystemContext;
+import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.sql.operators.factory.SimpleOperator;
 
 
-public class InsertStream implements RelationOperator {
+public class InsertStream extends SimpleOperator implements RelationOperator {
 
   private final InsertStreamSpec spec;
   private Relation relation = null;
 
   public InsertStream(InsertStreamSpec spec) {
     // TODO Auto-generated constructor stub
+    super(spec);
     this.spec = spec;
   }
 
   @Override
-  public void process(Relation deltaRelation, OperatorRoutingContext context) throws Exception {
+  public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception {
     // TODO Auto-generated method stub
     Iterator<Tuple> iterator = deltaRelation.iterator();
     for (; iterator.hasNext();) {
@@ -60,21 +61,9 @@ public class InsertStream implements RelationOperator {
   }
 
   @Override
-  public void timeout(long currentSystemNano, OperatorRoutingContext context) throws Exception {
+  public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
     // TODO Auto-generated method stub
     // assuming this operation does not have pending changes kept in memory
-  }
-
-  @Override
-  public RelationOperatorSpec getSpec() {
-    // TODO Auto-generated method stub
-    return this.spec;
-  }
-
-  @Override
-  public String getId() {
-    // TODO Auto-generated method stub
-    return this.spec.getId();
   }
 
 }
