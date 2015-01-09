@@ -30,7 +30,7 @@ public interface Tuple {
    * @return
    *     message object in the tuple
    */
-  Object getMessage();
+  public Object getMessage();
 
   /**
    * Access method to indicate whether the tuple is a delete tuple or an insert tuple
@@ -38,7 +38,7 @@ public interface Tuple {
    * @return
    *     a boolean value indicates whether the current tuple is a delete or insert message
    */
-  boolean isDelete();
+  public boolean isDelete();
 
   /**
    * Access method to a field value by name
@@ -48,13 +48,22 @@ public interface Tuple {
    * @return
    *     The field object corresponding to the name
    */
-  Object getField(String name);
+  public Object getField(String name);
+
+  /**
+   * Access method to the key of the tuple
+   *
+   * @return
+   *     The key of the tuple
+   */
+  public Object getKey();
 
   /**
    * get the name of the tuple
    *
    * @return
-   *     the stream name
+   *     the stream name that is unique in the system
    */
   public String getStreamName();
+
 }

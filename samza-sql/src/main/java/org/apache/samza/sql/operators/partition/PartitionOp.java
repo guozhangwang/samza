@@ -19,11 +19,14 @@
 
 package org.apache.samza.sql.operators.partition;
 
+import org.apache.samza.sql.api.data.OutgoingMessageTuple;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.task.InitSystemContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
+import org.apache.samza.system.OutgoingMessageEnvelope;
+import org.apache.samza.system.SystemStream;
 
 
 public final class PartitionOp extends SimpleOperator implements TupleOperator {
@@ -36,8 +39,8 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
     this.spec = spec;
   }
 
-  public PartitionOp(String id, String input, String output, String parKey, int parNum) {
-    super(new PartitionSpec(id, input, output, parKey, parNum));
+  public PartitionOp(String id, String input, String system, String output, String parKey, int parNum) {
+    super(new PartitionSpec(id, input, new SystemStream(system, output), parKey, parNum));
     this.spec = (PartitionSpec) super.getSpec();
   }
 
@@ -56,13 +59,64 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
   @Override
   public void process(Tuple tuple, RuntimeSystemContext context) throws Exception {
     // TODO Auto-generated method stub
-    context.sendToNextTupleOperator(this.spec.getId(), this.setPartitionKey(tuple));
+    context.sendToNextTupleOperator(this.getId(), this.setPartitionKey(tuple));
   }
 
-  private Tuple setPartitionKey(Tuple tuple) throws Exception {
+  private OutgoingMessageTuple setPartitionKey(Tuple tuple) throws Exception {
     // TODO Auto-generated method stub
     // This should set the partition key to <code>OutgoingMessageEnvelope</code> and return
-    return tuple;
+    return new OutgoingMessageTuple() {
+      private final OutgoingMessageEnvelope omsg = new OutgoingMessageEnvelope(PartitionOp.this.spec.getSystemStream(),
+          tuple.getKey(), tuple.getField(PartitionOp.this.spec.getParKey()), tuple.getMessage());
+
+      @Override
+      public Object getMessage() {
+        // TODO Auto-generated method stub
+        return this.omsg.getMessage();
+      }
+
+      @Override
+      public boolean isDelete() {
+        // TODO Auto-generated method stub
+        return false;
+      }
+
+      @Override
+      public Object getField(String name) {
+        // TODO Auto-generated method stub
+        return tuple.getField(name);
+      }
+
+      @Override
+      public Object getKey() {
+        // TODO Auto-generated method stub
+        return this.omsg.getKey();
+      }
+
+      @Override
+      public String getStreamName() {
+        // TODO Auto-generated method stub
+        return this.omsg.getSystemStream().getStream();
+      }
+
+      @Override
+      public OutgoingMessageEnvelope getOutgoingMessageEnvelope() {
+        // TODO Auto-generated method stub
+        return this.omsg;
+      }
+
+      @Override
+      public SystemStream getSystemStream() {
+        // TODO Auto-generated method stub
+        return this.omsg.getSystemStream();
+      }
+
+      @Override
+      public Object getPartitionKey() {
+        // TODO Auto-generated method stub
+        return this.omsg.getPartitionKey();
+      }
+    };
   }
 
 }

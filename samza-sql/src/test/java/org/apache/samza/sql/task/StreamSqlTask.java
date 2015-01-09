@@ -24,14 +24,13 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.samza.config.Config;
+import org.apache.samza.sql.api.data.IncomingMessageTuple;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
-import org.apache.samza.sql.data.IncomingMessageTuple;
+import org.apache.samza.sql.data.SystemInputTuple;
 import org.apache.samza.sql.operators.factory.SimpleOperatorFactoryImpl;
-import org.apache.samza.sql.operators.output.SystemStreamOp;
-import org.apache.samza.sql.operators.output.SystemStreamSpec;
 import org.apache.samza.sql.operators.partition.PartitionOp;
 import org.apache.samza.sql.operators.partition.PartitionSpec;
 import org.apache.samza.sql.operators.relation.Join;
@@ -65,7 +64,7 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     // TODO Auto-generated method stub
     RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
 
-    IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
+    IncomingMessageTuple ituple = new SystemInputTuple(envelope);
     for (Iterator<TupleOperator> iter = this.rteCntx.getSystemInputOps().iterator(ituple.getStreamName()); iter
         .hasNext();) {
       iter.next().process(ituple, opCntx);
@@ -89,7 +88,7 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   @Override
   public void init(Config config, TaskContext context) throws Exception {
     // create specification of all operators first
-    // 1. create 2 window specifications
+    // 1. create 2 window specifications that define 2 windows of fixed length of 10 seconds
     WindowSpec spec1 = new WindowSpec("fixedWnd1", 10, "inputStream1", "fixedWndOutput1");
     WindowSpec spec2 = new WindowSpec("fixedWnd2", 10, "inputStream2", "fixedWndOutput2");
     // 2. create a join specification that join the output from 2 window operators together
@@ -103,10 +102,9 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     // 3. create the specification of an istream operator that convert the output from join to a stream
     InsertStreamSpec istrmSpec = new InsertStreamSpec("istremOp", joinSpec.getOutputName(), "istrmOutput1");
     // 4. create the specification of a partition operator that re-partitions the stream based on <code>joinKey</code>
-    PartitionSpec parSpec = new PartitionSpec("parOp1", istrmSpec.getOutputName(), "parOutputStrm1", "joinKey", 50);
-    // 5. create the specification of the final output operator that sends the re-partitioned stream to output topic
-    SystemStreamSpec sstrmSpec =
-        new SystemStreamSpec("outputStream", parSpec.getOutputName(), new SystemStream("kafka", "outputTopic1"));
+    PartitionSpec parSpec =
+        new PartitionSpec("parOp1", istrmSpec.getOutputName(), new SystemStream("kafka", "parOutputStrm1"), "joinKey",
+            50);
 
     // create all operators via the operator factory
     // 1. create two window operators
@@ -119,8 +117,6 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     InsertStream istream = (InsertStream) operatorFactory.getRelationOperator(istrmSpec);
     // 4. create a re-partition operator
     PartitionOp par = (PartitionOp) operatorFactory.getTupleOperator(parSpec);
-    // 5. finally, the system stream output operator
-    SystemStreamOp sysStream = (SystemStreamOp) operatorFactory.getTupleOperator(sstrmSpec);
 
     // Now, connecting the operators via the routing context
     this.rteCntx = new SimpleRoutingContext();
@@ -134,8 +130,6 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     this.rteCntx.setNextRelationOperator(join.getId(), istream);
     // 4. connect re-partition operator to the stream operator
     this.rteCntx.setNextTupleOperator(istream.getId(), par);
-    // 5. finally, connect the system stream output operator to the re-partition operator
-    this.rteCntx.setNextTupleOperator(par.getId(), sysStream);
 
     // Finally, initialize all operators
     this.initCntx = new SqlContextManager(context);

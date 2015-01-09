@@ -1,5 +1,6 @@
 package org.apache.samza.sql.task;
 
+import org.apache.samza.sql.api.data.OutgoingMessageTuple;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
@@ -21,18 +22,6 @@ public class RoutableRuntimeContext implements RuntimeSystemContext {
   }
 
   @Override
-  public MessageCollector getMessageCollector() {
-    // TODO Auto-generated method stub
-    return collector;
-  }
-
-  @Override
-  public TaskCoordinator getTaskCoordinator() {
-    // TODO Auto-generated method stub
-    return coordinator;
-  }
-
-  @Override
   public void sendToNextRelationOperator(String currentOpId, Relation deltaRelation) throws Exception {
     // TODO Auto-generated method stub
     this.rteCntx.getNextRelationOperator(currentOpId).process(deltaRelation, this);
@@ -41,7 +30,14 @@ public class RoutableRuntimeContext implements RuntimeSystemContext {
   @Override
   public void sendToNextTupleOperator(String currentOpId, Tuple tuple) throws Exception {
     // TODO Auto-generated method stub
-    this.rteCntx.getNextTupleOperator(currentOpId).process(tuple, this);
+    if (this.rteCntx.getNextTupleOperator(currentOpId) != null) {
+      // by default, always send to the next operator
+      this.rteCntx.getNextTupleOperator(currentOpId).process(tuple, this);
+    } else if (tuple instanceof OutgoingMessageTuple) {
+      // if there is no next operator, check whether the tuple is an OutgoingMessageTuple
+      this.collector.send(((OutgoingMessageTuple) tuple).getOutgoingMessageEnvelope());
+    }
+    throw new IllegalStateException("No next tuple operator found and the tuple is not an OutgoingMessageTuple");
   }
 
   @Override

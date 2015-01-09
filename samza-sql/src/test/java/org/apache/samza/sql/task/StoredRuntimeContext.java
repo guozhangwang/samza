@@ -25,18 +25,6 @@ public class StoredRuntimeContext implements RuntimeSystemContext {
   }
 
   @Override
-  public MessageCollector getMessageCollector() {
-    // TODO Auto-generated method stub
-    return collector;
-  }
-
-  @Override
-  public TaskCoordinator getTaskCoordinator() {
-    // TODO Auto-generated method stub
-    return coordinator;
-  }
-
-  @Override
   public void sendToNextRelationOperator(String currentOpId, Relation deltaRelation) throws Exception {
     // TODO Auto-generated method stub
     saveOutput(currentOpId, deltaRelation);
