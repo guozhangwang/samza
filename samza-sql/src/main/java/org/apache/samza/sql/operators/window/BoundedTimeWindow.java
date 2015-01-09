@@ -19,6 +19,8 @@
 
 package org.apache.samza.sql.operators.window;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
@@ -100,7 +102,11 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
     // TODO Auto-generated method stub
     if (this.relation == null) {
       this.relation = initContext.getRelation(this.spec.getOutputName());
-      this.windowStates = initContext.getWindowStates(this.spec.getId());
+      Relation wndStates = initContext.getRelation(this.spec.getWndStatesName());
+      this.windowStates = new ArrayList<WindowState>();
+      for (Iterator<Tuple> iter = wndStates.iterator(); iter.hasNext();) {
+        this.windowStates.add((WindowState) iter.next().getField("WindowState"));
+      }
     }
   }
 }

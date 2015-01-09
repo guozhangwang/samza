@@ -19,10 +19,7 @@
 
 package org.apache.samza.sql.api.task;
 
-import java.util.List;
-
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.operators.window.WindowState;
 
 
 /**
@@ -42,15 +39,5 @@ public interface InitSystemContext {
    *     the relation object that is corresponding to the name
    */
   public Relation getRelation(String relationName);
-
-  /**
-   * get a list of window states based on the <code>wndName</code> from the underlying storage layer/changelog
-   *
-   * @param wndName
-   *     The window operator's name. It has to be unique in the whole task
-   * @return
-   *     The list of current window states, including some previously closed windows and the current open window.
-   */
-  public List<WindowState> getWindowStates(String wndName);
 
 }

@@ -56,4 +56,11 @@ public class WindowSpec implements OperatorSpec {
     return this.output;
   }
 
+  public String getWndStatesName() {
+    return this.id + "-wnd-state";
+  }
+
+  public int getWndSizeSec() {
+    return this.wndSizeSec;
+  }
 }
