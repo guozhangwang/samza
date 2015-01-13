@@ -30,6 +30,10 @@ import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
 
 
+/**
+ * Example routing context implementation.
+ *
+ */
 public class SimpleRoutingContext implements OperatorRoutingContext {
   private Map<String, Operator> operators = new HashMap<String, Operator>();
   private Map<String, Operator> nextOps = new HashMap<String, Operator>();

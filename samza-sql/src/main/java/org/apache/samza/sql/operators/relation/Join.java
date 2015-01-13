@@ -28,27 +28,53 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 
 
+/**
+ * This class defines an example build-in operator for a join operator between two relations.
+ *
+ */
 public class Join extends SimpleOperator implements RelationOperator {
 
-  private final JoinSpec spec;
-
+  /**
+   * The input relations
+   *
+   */
   private List<Relation> inputs = null;
 
+  /**
+   * The output relation
+   */
   private Relation output = null;
 
+  /**
+   * ctor that creates <code>Join</code> operator based on the specification.
+   *
+   * <p>This version of constructor is often used in an implementation of <code>SqlOperatorFactory</code>
+   *
+   * @param spec
+   *     The <code>JoinSpec</code> object that specifies the join operator
+   */
   public Join(JoinSpec spec) {
-    // TODO Auto-generated constructor stub
     super(spec);
-    this.spec = spec;
   }
 
+  /**
+   * An alternative ctor that allows users to create a join operator randomly.
+   *
+   * @param id
+   *     The identifier of the join operator
+   * @param joinIns
+   *     The list of input relation names of the join
+   * @param joinOut
+   *     The output relation name of the join
+   * @param joinKeys
+   *     The list of keys used in the join. Each entry in the <code>joinKeys</code> is the key name used in one of the input relations.
+   *     The order of the <code>joinKeys</code> MUST be the same as their corresponding relation names in <code>joinIns</code>
+   */
   public Join(String id, List<String> joinIns, String joinOut, List<String> joinKeys) {
     super(new JoinSpec(id, joinIns, joinOut, joinKeys));
-    this.spec = (JoinSpec) this.getSpec();
   }
 
   private boolean hasPendingChanges() {
-    // TODO Auto-generated method stub
     return getPendingChanges() != null;
   }
 
@@ -78,29 +104,26 @@ public class Join extends SimpleOperator implements RelationOperator {
 
   @Override
   public void init(InitSystemContext initContext) throws Exception {
-    // TODO Auto-generated method stub
-    for (String relation : this.spec.getInputNames()) {
+    for (String relation : this.getSpec().getInputNames()) {
       inputs.add(initContext.getRelation(relation));
     }
-    this.output = initContext.getRelation(this.spec.getOutputName());
+    this.output = initContext.getRelation(this.getSpec().getOutputName());
   }
 
   @Override
   public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
-    // TODO Auto-generated method stub
     if (hasPendingChanges()) {
-      context.sendToNextRelationOperator(this.spec.getId(), getPendingChanges());
+      context.sendToNextRelationOperator(this.getId(), getPendingChanges());
     }
-    context.sendToNextTimeoutOperator(this.spec.getId(), currentSystemNano);
+    context.sendToNextTimeoutOperator(this.getId(), currentSystemNano);
   }
 
   @Override
   public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception {
-    // TODO Auto-generated method stub
     // calculate join based on the input <code>deltaRelation</code>
     join(deltaRelation);
     if (hasOutputChanges()) {
-      context.sendToNextRelationOperator(this.spec.getId(), getOutputChanges());
+      context.sendToNextRelationOperator(this.getId(), getOutputChanges());
     }
   }
 }

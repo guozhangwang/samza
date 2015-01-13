@@ -255,6 +255,7 @@ project(":samza-sql_$scalaVersion") {
     compile "commons-collections:commons-collections:$commonsCollectionVersion"
     testCompile "junit:junit:$junitVersion"
     testCompile "org.mockito:mockito-all:$mockitoVersion"
+    testCompile project(":samza-kv_$scalaVersion")
   }
 
   test {

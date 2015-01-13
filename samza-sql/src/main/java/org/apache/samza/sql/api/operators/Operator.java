@@ -32,12 +32,13 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
  * <li><code>init</code> via the <code>InitSystemContext</code>
  * <li><code>timeout</code> method triggered when timeout happened
  * <li><code>getId</code> that returns the unique ID of the operator in the task
+ * <li><code>getSpec</code> that returns the specification object of the operator
  * </ul>
  *
  */
 public interface Operator {
   /**
-   * interface method to initialize the operator via the <code>RelationStore</code>
+   * method to initialize the operator via the <code>InitSystemContext</code>
    *
    * @param initContext
    *     The init context object that provides interface to recover states from the task context
@@ -47,17 +48,19 @@ public interface Operator {
   public void init(InitSystemContext initContext) throws Exception;
 
   /**
-   * interface method that is to be called when timer expires instead of relation changes are calculated
+   * method that is to be called when timer expires
    *
    * @param currentSystemNano
    *     the current system time in nano-second
+   * @param context
+   *     the <code>RuntimeSystemContext</code> object that allows the operator to send their output to
    * @throws Exception
    *     Throws exception if failed
    */
   public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception;
 
   /**
-   * interface method to get the unique ID of the operator conveniently
+   * method to get the unique ID of the operator conveniently
    *
    * @return
    *     the unique ID of the operator
@@ -65,10 +68,10 @@ public interface Operator {
   public String getId();
 
   /**
-   * Access method to the specification of this <code>RelationOperator</code>
+   * method to the specification of this <code>Operator</code>
    *
    * @return
-   *     A list of <code>RelationSpec</code> that is the input of the corresponding operator
+   *     The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
    */
   public OperatorSpec getSpec();
 

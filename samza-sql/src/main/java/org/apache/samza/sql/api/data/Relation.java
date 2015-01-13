@@ -23,10 +23,10 @@ import java.util.Iterator;
 
 
 /**
- * This class defines the interface of <code>Relation</code>, which is defined as a map of <code>Tuple</code>.
+ * This class defines the general interface of <code>Relation</code>, which is defined as a map of <code>Tuple</code>.
  *
- * <p>The interface defines the set of common operations on a bag of <code>Tuple</code>s that are supported,
- * including <code>get</code>, <code>put</code>, <code>delete</code>, and <code>iterator</code> that allows to iterate through all tuples.
+ * <p>The interface defines the set of common operations on a bag of <code>Tuple</code>s, including <code>get</code>,
+ * <code>put</code>, <code>delete</code>, and <code>iterator</code> that allows to iterate through all tuples.
  *
  */
 
@@ -60,14 +60,14 @@ public interface Relation {
    * @param key
    *     The primary key for the tuple to be stored
    * @return
-   *     The tuple to be stored in the stored relation
+   *     The tuple deleted from the stored relation
    */
   public Tuple delete(Object key);
 
   /**
    * Returns an iterator of the relation
    *
-   * <p>Note that some relations stored in the remote database may not be able to support this function.
+   * <p>Note that some relations stored in the remote database may not be able to support this function, such as a remote NoSQL database.
    *
    * @return
    *     The tuple to be stored in the stored relation
@@ -75,7 +75,7 @@ public interface Relation {
   public Iterator<Tuple> iterator();
 
   /**
-   * get the primary key field name defined for this table
+   * get the primary key field name for this table
    *
    * @return
    *     the name of the primary key field

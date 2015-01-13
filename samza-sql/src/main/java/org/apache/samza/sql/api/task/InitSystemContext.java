@@ -23,7 +23,7 @@ import org.apache.samza.sql.api.data.Relation;
 
 
 /**
- * This class implements a <code>SqlContextManager</code> to access various types of states needed in the stream SQL operators,
+ * This class defines interface of an operator initializing context to access various types of recoverable states for an operator,
  * including relations generated as intermediate results in the SQL query, the windowing operators' internal window states,
  * and the relations that are stored and backed in external or local databases.
  *
@@ -31,10 +31,10 @@ import org.apache.samza.sql.api.data.Relation;
 public interface InitSystemContext {
 
   /**
-   * get a relation based on its specification from the underlying storage layer/changelog
+   * get a relation based on its name from the system context
    *
-   * @param spec
-   *     the specification of the relation to be opened and returned
+   * @param relationName
+   *     the unique name of the relation to be opened and returned
    * @return
    *     the relation object that is corresponding to the name
    */

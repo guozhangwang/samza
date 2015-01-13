@@ -24,16 +24,24 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
 
 
 /**
- * This class defines the interface class that processes incoming tuples from a single input stream.
+ * This class defines the interface class that processes incoming tuples from input stream(s).
+ *
+ * <p>All operators implementing <code>TupleOperator</code> will take a <code>Tuple</code> object as input.
+ * The SQL operators that need to implement this interface include:
+ * <ul>
+ * <li>All stream-to-relation operators, such as: window operators.
+ * <li>All stream-to-stream operators, such as: re-partition, union of two streams
+ * </ul>
  *
  */
 public interface TupleOperator extends Operator {
   /**
    * interface method to process on an input tuple.
-   * <p>This interface method is expected to be invoked when i) converting stream to relation; Or ii) repartitioning a stream
    *
    * @param tuple
    *     The input tuple, which has the incoming message from a stream
+   * @param context
+   *     The runtime context that accepts outputs from the operator
    * @throws Exception
    *     Throws exception if failed
    */

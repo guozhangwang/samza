@@ -19,44 +19,26 @@
 
 package org.apache.samza.sql.operators.partition;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
+import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 import org.apache.samza.system.SystemStream;
 
 
-public class PartitionSpec implements OperatorSpec {
-  private final String id;
-  private final List<String> inputs = new ArrayList<String>();
+/**
+ * This class defines the specification class of <code>PartitionOp</code> operator
+ *
+ */
+public class PartitionSpec extends SimpleOperatorSpec implements OperatorSpec {
+
   private final String parKey;
   private final int parNum;
   private final SystemStream sysStream;
 
   public PartitionSpec(String id, String input, SystemStream output, String parKey, int parNum) {
-    this.id = id;
-    this.inputs.add(input);
+    super(id, input, output.getSystem() + ":" + output.getStream());
     this.parKey = parKey;
     this.parNum = parNum;
-    this.sysStream = null;
-  }
-
-  @Override
-  public String getId() {
-    // TODO Auto-generated method stub
-    return this.id;
-  }
-
-  @Override
-  public List<String> getInputNames() {
-    // TODO Auto-generated method stub
-    return this.inputs;
-  }
-
-  @Override
-  public String getOutputName() {
-    // TODO Auto-generated method stub
-    return this.sysStream.toString();
+    this.sysStream = output;
   }
 
   public String getParKey() {

@@ -19,39 +19,14 @@
 
 package org.apache.samza.sql.operators.stream;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
+import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 
-public class InsertStreamSpec implements OperatorSpec {
-  private final String id;
-  private final List<String> inputs = new ArrayList<String>();
-  private final String output;
+public class InsertStreamSpec extends SimpleOperatorSpec implements OperatorSpec {
 
   public InsertStreamSpec(String id, String input, String output) {
-    this.id = id;
-    this.inputs.add(input);
-    this.output = output;
-  }
-
-  @Override
-  public String getId() {
-    // TODO Auto-generated method stub
-    return this.id;
-  }
-
-  @Override
-  public List<String> getInputNames() {
-    // TODO Auto-generated method stub
-    return this.inputs;
-  }
-
-  @Override
-  public String getOutputName() {
-    // TODO Auto-generated method stub
-    return this.output;
+    super(id, input, output);
   }
 
   public String getInputRelation() {

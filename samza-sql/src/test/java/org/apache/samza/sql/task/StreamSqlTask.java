@@ -51,6 +51,18 @@ import org.apache.samza.task.TaskCoordinator;
 import org.apache.samza.task.WindowableTask;
 
 
+/***
+ * This example illustrate a SQL join operation that joins two streams together using the folowing operations:
+ * <ul>
+ * <li>a. the two streams are each processed by a window operator to convert to relations
+ * <li>b. a join operator is applied on the two relations to generate join results
+ * <li>c. an istream operator is applied on join output and convert the relation into a stream
+ * <li>d. a partition operator that re-partitions the output stream from istream and send the stream to system output
+ * </ul>
+ *
+ * This example also uses an implementation of <code>RuntimeSystemContext</code> (@see <code>RoutableRuntimeContext</code>)
+ * that uses <code>OperatorRoutingContext</code> to automatically execute the whole paths that connects operators together.
+ */
 public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
 
   private SqlContextManager initCntx;
@@ -61,7 +73,6 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    // TODO Auto-generated method stub
     RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
 
     IncomingMessageTuple ituple = new SystemInputTuple(envelope);
@@ -75,7 +86,6 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   @SuppressWarnings("unchecked")
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    // TODO Auto-generated method stub
     RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
 
     long currNano = System.nanoTime();
@@ -89,8 +99,8 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   public void init(Config config, TaskContext context) throws Exception {
     // create specification of all operators first
     // 1. create 2 window specifications that define 2 windows of fixed length of 10 seconds
-    WindowSpec spec1 = new WindowSpec("fixedWnd1", 10, "inputStream1", "fixedWndOutput1");
-    WindowSpec spec2 = new WindowSpec("fixedWnd2", 10, "inputStream2", "fixedWndOutput2");
+    WindowSpec spec1 = new WindowSpec("fixedWnd1", "inputStream1", "fixedWndOutput1", 10);
+    WindowSpec spec2 = new WindowSpec("fixedWnd2", "inputStream2", "fixedWndOutput2", 10);
     // 2. create a join specification that join the output from 2 window operators together
     List<String> inputRelations = new ArrayList<String>();
     inputRelations.add(spec1.getOutputName());

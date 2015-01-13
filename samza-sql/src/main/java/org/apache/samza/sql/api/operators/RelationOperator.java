@@ -32,24 +32,20 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
  * <li>All relation algebra operators, such as: join, select, where, group-by, having, limit, order-by, etc.
  * <li>All relation-to-stream operators, which converts a relation to a stream
  * </ul>
- * The <code>RelationOperator</code>s would also implement an interface method to get <code>RelationOperatorSpec</code> object
- * that returns the specification of this operator.
  *
  */
 public interface RelationOperator extends Operator {
 
   /**
-   * interface method to perform a relational algebra on a set of relations.
+   * method to perform a relational algebra on a set of relations, or a relation-to-stream function
    *
    * <p> The actual implementation of relational logic is performed by the implementation of this method.
-   * The <code>context</code> object is passed in as a parameter s.t. the operator can a) invoke the next operator
-   * Or b) store the output of the current operator via the <code>context</code> object, depending on the implementation
-   * of <code>OperatorRoutingContext</code> interface class.
+   * The <code>context</code> object is used by the operator to send their output to
    *
    * @param deltaRelation
    *     the changed rows in the input relation, including the inserts/deletes/updates
    * @param context
-   *     the routing context object that provides connection between operators
+   *     the runtime context object that accepts outputs from the operator
    * @throws Exception
    *     Throws exception if failed
    */

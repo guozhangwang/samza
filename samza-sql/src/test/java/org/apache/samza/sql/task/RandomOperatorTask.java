@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.samza.sql.task;
 
 import java.util.ArrayList;
@@ -61,13 +80,14 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    // TODO Auto-generated method stub
+    // create the runtime context w/ the output store
     StoredRuntimeContext context = new StoredRuntimeContext(collector, coordinator, this.opOutputStore);
 
+    // construct the input tuple
     SystemInputTuple ituple = new SystemInputTuple(envelope);
 
+    // based on tuple's stream name, get the window op and run process()
     BoundedTimeWindow wndOp = getWindowOp(ituple.getStreamName());
-
     wndOp.process(ituple, context);
     List<Object> wndOutputs = context.removeOutput(wndOp.getId());
     if (wndOutputs.isEmpty()) {
@@ -86,18 +106,19 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    // TODO Auto-generated method stub
+    // create the runtime context w/ the output store
     StoredRuntimeContext context = new StoredRuntimeContext(collector, coordinator, this.opOutputStore);
     long sysTimeNano = System.nanoTime();
 
+    // trigger timeout event on both window operators
     this.wndOp1.timeout(sysTimeNano, context);
     this.wndOp2.timeout(sysTimeNano, context);
 
+    // for all outputs from the window operators, call joinOp.process()
     for (Object input : context.removeOutput(this.wndOp1.getId())) {
       Relation relation = (Relation) input;
       this.joinOp.process(relation, context);
     }
-
     for (Object input : context.removeOutput(this.wndOp2.getId())) {
       Relation relation = (Relation) input;
       this.joinOp.process(relation, context);

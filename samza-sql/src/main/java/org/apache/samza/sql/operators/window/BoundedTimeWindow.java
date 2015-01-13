@@ -31,28 +31,59 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 
 
+/**
+ * This class defines an example build-in operator for a fixed size window operator that converts a stream to a relation
+ *
+ */
 public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
 
+  /**
+   * The specification of this window operator
+   */
   private final WindowSpec spec;
 
+  /**
+   * The relation that the window operator keeps internally
+   */
   private Relation relation = null;
 
+  /**
+   * The list of window states of all active windows the window operator keeps in track
+   */
   private List<WindowState> windowStates = null;
 
+  /**
+   * ctor that takes <code>WindowSpec</code> specification as input argument
+   *
+   * <p>This version of constructor is often used in an implementation of <code>SqlOperatorFactory</code>
+   *
+   * @param spec
+   *     The window specification object
+   */
   public BoundedTimeWindow(WindowSpec spec) {
-    // TODO Auto-generated constructor stub
     super(spec);
     this.spec = spec;
   }
 
+  /**
+   * A simplified version of ctor that allows users to randomly created a window operator w/o spec object
+   *
+   * @param wndId
+   *     The identifier of this window operator
+   * @param lengthSec
+   *     The window size in seconds
+   * @param input
+   *     The input stream name
+   * @param output
+   *     The output relation name
+   */
   public BoundedTimeWindow(String wndId, int lengthSec, String input, String output) {
-    super(new WindowSpec(wndId, lengthSec, input, output));
+    super(new WindowSpec(wndId, input, output, lengthSec));
     this.spec = (WindowSpec) super.getSpec();
   }
 
   @Override
   public void process(Tuple tuple, RuntimeSystemContext context) throws Exception {
-    // TODO Process each incoming tuple
     // for each tuple, this will evaluate the incoming tuple and update the window states.
     // If the window states allow generating output, calculate the delta changes in
     // the window relation and execute the relation operation <code>nextOp</code>
@@ -61,7 +92,6 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
   }
 
   private void processWindowChanges(RuntimeSystemContext context) throws Exception {
-    // TODO Auto-generated method stub
     if (windowStateChange()) {
       context.sendToNextRelationOperator(this.spec.getId(), getWindowChanges());
     }
@@ -85,7 +115,6 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
 
   @Override
   public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
-    // TODO timeout needs to be implemented per window spec, default is doing nothing
     updateWindowTimeout();
     processWindowChanges(context);
     context.sendToNextTimeoutOperator(this.spec.getId(), currentSystemNano);

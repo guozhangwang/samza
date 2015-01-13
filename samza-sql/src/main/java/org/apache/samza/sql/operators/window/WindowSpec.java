@@ -19,45 +19,21 @@
 
 package org.apache.samza.sql.operators.window;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
+import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 
-public class WindowSpec implements OperatorSpec {
-  private final String id;
-  private final List<String> inputs = new ArrayList<String>();
-  private final String output;
+public class WindowSpec extends SimpleOperatorSpec implements OperatorSpec {
+
   private final int wndSizeSec;
 
-  public WindowSpec(String id, int lengthSec, String input, String output) {
-    this.id = id;
+  public WindowSpec(String id, String input, String output, int lengthSec) {
+    super(id, input, output);
     this.wndSizeSec = lengthSec;
-    this.inputs.add(input);
-    this.output = output;
-  }
-
-  @Override
-  public String getId() {
-    // TODO Auto-generated method stub
-    return this.id;
-  }
-
-  @Override
-  public List<String> getInputNames() {
-    // TODO Auto-generated method stub
-    return this.inputs;
-  }
-
-  @Override
-  public String getOutputName() {
-    // TODO Auto-generated method stub
-    return this.output;
   }
 
   public String getWndStatesName() {
-    return this.id + "-wnd-state";
+    return this.getId() + "-wnd-state";
   }
 
   public int getWndSizeSec() {

@@ -29,16 +29,47 @@ import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
 
 
+/**
+ * This is an example build-in operator that performs a simple stream re-partition operation.
+ *
+ */
 public final class PartitionOp extends SimpleOperator implements TupleOperator {
 
+  /**
+   * The specification of this <code>PartitionOp</code>
+   *
+   */
   private final PartitionSpec spec;
 
+  /**
+   * ctor that takes the <code>PartitionSpec</code> object as input.
+   *
+   * <p>This version of constructor is often used by an implementation class of <code>SqlOperatorFactory</code>
+   *
+   * @param spec
+   *     The <code>PartitionSpec</code> object
+   */
   public PartitionOp(PartitionSpec spec) {
-    // TODO Auto-generated constructor stub
     super(spec);
     this.spec = spec;
   }
 
+  /**
+   * A simplified constructor that allow users to randomly create <code>PartitionOp</code>
+   *
+   * @param id
+   *     The identifier of this operator
+   * @param input
+   *     The input stream name of this operator
+   * @param system
+   *     The output system name of this operator
+   * @param output
+   *     The output stream name of this operator
+   * @param parKey
+   *     The partition key used for the output stream
+   * @param parNum
+   *     The number of partitions used for the output stream
+   */
   public PartitionOp(String id, String input, String system, String output, String parKey, int parNum) {
     super(new PartitionSpec(id, input, new SystemStream(system, output), parKey, parNum));
     this.spec = (PartitionSpec) super.getSpec();
@@ -58,12 +89,10 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
 
   @Override
   public void process(Tuple tuple, RuntimeSystemContext context) throws Exception {
-    // TODO Auto-generated method stub
     context.sendToNextTupleOperator(this.getId(), this.setPartitionKey(tuple));
   }
 
   private OutgoingMessageTuple setPartitionKey(Tuple tuple) throws Exception {
-    // TODO Auto-generated method stub
     // This should set the partition key to <code>OutgoingMessageEnvelope</code> and return
     return new OutgoingMessageTuple() {
       private final OutgoingMessageEnvelope omsg = new OutgoingMessageEnvelope(PartitionOp.this.spec.getSystemStream(),
@@ -71,49 +100,41 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
 
       @Override
       public Object getMessage() {
-        // TODO Auto-generated method stub
         return this.omsg.getMessage();
       }
 
       @Override
       public boolean isDelete() {
-        // TODO Auto-generated method stub
         return false;
       }
 
       @Override
       public Object getField(String name) {
-        // TODO Auto-generated method stub
         return tuple.getField(name);
       }
 
       @Override
       public Object getKey() {
-        // TODO Auto-generated method stub
         return this.omsg.getKey();
       }
 
       @Override
       public String getStreamName() {
-        // TODO Auto-generated method stub
         return this.omsg.getSystemStream().getStream();
       }
 
       @Override
       public OutgoingMessageEnvelope getOutgoingMessageEnvelope() {
-        // TODO Auto-generated method stub
         return this.omsg;
       }
 
       @Override
       public SystemStream getSystemStream() {
-        // TODO Auto-generated method stub
         return this.omsg.getSystemStream();
       }
 
       @Override
       public Object getPartitionKey() {
-        // TODO Auto-generated method stub
         return this.omsg.getPartitionKey();
       }
     };

@@ -24,6 +24,10 @@ import org.apache.samza.sql.api.task.InitSystemContext;
 import org.apache.samza.task.TaskContext;
 
 
+/**
+ * Example implementation of <code>InitSystemContext</code>
+ *
+ */
 public class SqlContextManager implements InitSystemContext {
 
   private final TaskContext context;

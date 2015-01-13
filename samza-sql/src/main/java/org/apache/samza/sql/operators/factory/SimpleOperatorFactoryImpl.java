@@ -52,7 +52,6 @@ public class SimpleOperatorFactoryImpl implements SqlOperatorFactory {
 
   @Override
   public TupleOperator getTupleOperator(OperatorSpec spec) {
-    // TODO Auto-generated method stub
     if (spec instanceof WindowSpec) {
       return new BoundedTimeWindow((WindowSpec) spec);
     } else if (spec instanceof PartitionSpec) {

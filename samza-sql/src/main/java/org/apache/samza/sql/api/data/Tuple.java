@@ -20,12 +20,14 @@
 package org.apache.samza.sql.api.data;
 
 /**
- * This class defines the interface of <code>Tuple</code>, which is defined as a entry from the incoming stream, or one row in a <code>Relation</code>.
+ * This class defines the generic interface of <code>Tuple</code>, which is a entry from the incoming stream, or one row in a <code>Relation</code>.
+ *
+ * <p>The <code>Tuple</code> models the basic operatible unit in streaming SQL processes in Samza.
  *
  */
 public interface Tuple {
   /**
-   * Access method to get the corresponding message in the incoming/outgoing tuple
+   * Access method to get the corresponding message body in the tuple
    *
    * @return
    *     message object in the tuple
@@ -33,7 +35,7 @@ public interface Tuple {
   public Object getMessage();
 
   /**
-   * Access method to indicate whether the tuple is a delete tuple or an insert tuple
+   * Method to indicate whether the tuple is a delete tuple or an insert tuple
    *
    * @return
    *     a boolean value indicates whether the current tuple is a delete or insert message
@@ -54,15 +56,15 @@ public interface Tuple {
    * Access method to the key of the tuple
    *
    * @return
-   *     The key of the tuple
+   *     The <code>key</code> of the tuple
    */
   public Object getKey();
 
   /**
-   * get the name of the tuple
+   * Get the stream name of the tuple. Note this stream name should be unique in the system.
    *
    * @return
-   *     the stream name that is unique in the system
+   *     the stream name which this tuple belongs to
    */
   public String getStreamName();
 

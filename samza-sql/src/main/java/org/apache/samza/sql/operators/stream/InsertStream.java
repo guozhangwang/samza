@@ -29,20 +29,41 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 
 
+/**
+ * This class defines an example build-in operator for an istream operator that converts a relation to a stream
+ *
+ */
 public class InsertStream extends SimpleOperator implements RelationOperator {
-
+  /**
+   * The <code>InsertStreamSpec</code> for this operator
+   */
   private final InsertStreamSpec spec;
+
+  /**
+   * The time-varying relation that is to be converted into a stream
+   */
   private Relation relation = null;
 
+  /**
+   * ctor that takes the specication of the object as input parameter
+   *
+   * <p>This version of constructor is often used in an implementation of <code>SqlOperatorFactory</code>
+   *
+   * @param spec
+   *     The <code>InsertStreamSpec</code> specification of this operator
+   */
   public InsertStream(InsertStreamSpec spec) {
-    // TODO Auto-generated constructor stub
     super(spec);
     this.spec = spec;
   }
 
+  public InsertStream(String id, String input, String output) {
+    super(new InsertStreamSpec(id, input, output));
+    this.spec = (InsertStreamSpec) super.getSpec();
+  }
+
   @Override
   public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception {
-    // TODO Auto-generated method stub
     Iterator<Tuple> iterator = deltaRelation.iterator();
     for (; iterator.hasNext();) {
       Tuple tuple = iterator.next();
@@ -54,7 +75,6 @@ public class InsertStream extends SimpleOperator implements RelationOperator {
 
   @Override
   public void init(InitSystemContext initContext) throws Exception {
-    // TODO Auto-generated method stub
     if (this.relation == null) {
       this.relation = initContext.getRelation(this.spec.getInputRelation());
     }

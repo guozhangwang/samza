@@ -23,38 +23,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
+import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 
-public class JoinSpec implements OperatorSpec {
-  private final String id;
-  private final List<String> inputs = new ArrayList<String>();
-  private final String output;
+public class JoinSpec extends SimpleOperatorSpec implements OperatorSpec {
   private final List<String> joinKeys = new ArrayList<String>();
 
   public JoinSpec(String id, List<String> joinIns, String joinOut, List<String> joinKeys) {
-    // TODO Auto-generated constructor stub
-    this.id = id;
-    this.inputs.addAll(joinIns);
-    this.output = joinOut;
+    super(id, joinIns, joinOut);
     this.joinKeys.addAll(joinKeys);
-  }
-
-  @Override
-  public String getId() {
-    // TODO Auto-generated method stub
-    return this.id;
-  }
-
-  @Override
-  public List<String> getInputNames() {
-    // TODO Auto-generated method stub
-    return this.inputs;
-  }
-
-  @Override
-  public String getOutputName() {
-    // TODO Auto-generated method stub
-    return this.output;
   }
 
   public List<String> getJoinKeys() {
