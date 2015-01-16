@@ -18,6 +18,7 @@
  */
 package org.apache.samza.sql.data;
 
+import org.apache.samza.sql.api.data.Data;
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.system.IncomingMessageEnvelope;
@@ -50,10 +51,11 @@ public class IncomingMessageTuple implements Tuple {
             .getSystemStreamPartition().getStream()));
   }
 
-  // TODO: the return type should be changed to the generic data type
   @Override
-  public Object getMessage() {
-    return this.imsg.getMessage();
+  public Data getMessage() {
+    // TODO: need to get the Serde class from SerdeManager and apply the corresponding Schema class to get the generic data type here.
+    // return this.imsg.getMessage();
+    return null;
   }
 
   @Override
@@ -62,19 +64,14 @@ public class IncomingMessageTuple implements Tuple {
   }
 
   @Override
-  public Object getField(String name) {
-    // TODO: get field should be implemented as part of the schema / data Serde
-    return null;
-  }
-
-  @Override
-  public Object getKey() {
-    return imsg.getKey();
-  }
-
-  @Override
   public EntityName getStreamName() {
     return this.strmEntity;
+  }
+
+  @Override
+  public Data getKey() {
+    // TODO: need to get the Serde class from SerdeManager and apply the corresponding Schema class to get the generic data type here.
+    return null;
   }
 
 }

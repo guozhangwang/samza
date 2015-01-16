@@ -82,8 +82,8 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
 
   @Override
   public void process(Tuple tuple, RuntimeSystemContext context) throws Exception {
-    context.send(new OutgoingMessageEnvelope(PartitionOp.this.spec.getSystemStream(), tuple.getKey(), tuple
-        .getField(PartitionOp.this.spec.getParKey()), tuple.getMessage()));
+    context.send(new OutgoingMessageEnvelope(PartitionOp.this.spec.getSystemStream(), tuple.getKey().value(), tuple
+        .getMessage().getFieldData(PartitionOp.this.spec.getParKey()).value(), tuple.getMessage()));
   }
 
 }

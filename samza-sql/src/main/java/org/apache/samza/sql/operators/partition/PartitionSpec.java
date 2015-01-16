@@ -88,4 +88,9 @@ public class PartitionSpec extends SimpleOperatorSpec implements OperatorSpec {
   public SystemStream getSystemStream() {
     return this.sysStream;
   }
+
+  public String getKey() {
+    // TODO Auto-generated method stub
+    return this.parKey;
+  }
 }

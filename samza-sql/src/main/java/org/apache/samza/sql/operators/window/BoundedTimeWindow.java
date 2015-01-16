@@ -134,7 +134,7 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
       Relation wndStates = (Relation) context.getStore(this.spec.getWndStatesName());
       this.windowStates = new ArrayList<WindowState>();
       for (KeyValueIterator<Object, Tuple> iter = wndStates.all(); iter.hasNext();) {
-        this.windowStates.add((WindowState) iter.next().getValue().getField("WindowState"));
+        this.windowStates.add((WindowState) iter.next().getValue().getMessage().getFieldData("WindowState").value());
       }
     }
   }
