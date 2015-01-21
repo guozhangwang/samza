@@ -40,7 +40,6 @@ import org.apache.samza.sql.operators.stream.InsertStream;
 import org.apache.samza.sql.operators.stream.InsertStreamSpec;
 import org.apache.samza.sql.operators.window.BoundedTimeWindow;
 import org.apache.samza.sql.operators.window.WindowSpec;
-import org.apache.samza.sql.store.SqlContextManager;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
 import org.apache.samza.task.InitableTask;
@@ -65,15 +64,13 @@ import org.apache.samza.task.WindowableTask;
  */
 public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
 
-  private SqlContextManager initCntx;
-
   private OperatorRoutingContext rteCntx;
 
   @SuppressWarnings("unchecked")
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
+    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, this.rteCntx);
 
     IncomingMessageTuple ituple = new SystemInputTuple(envelope);
     for (Iterator<TupleOperator> iter = this.rteCntx.getSystemInputOps().iterator(ituple.getStreamName()); iter
@@ -86,7 +83,7 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   @SuppressWarnings("unchecked")
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
+    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, this.rteCntx);
 
     long currNano = System.nanoTime();
     for (Iterator<Operator> iter = this.rteCntx.getSystemInputOps().values().iterator(); iter.hasNext();) {
@@ -134,17 +131,15 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     this.rteCntx.setSystemInputOperator(wnd1);
     this.rteCntx.setSystemInputOperator(wnd2);
     // 2. connect join operator to both window operators
-    this.rteCntx.setNextRelationOperator(wnd1.getId(), join);
-    this.rteCntx.setNextRelationOperator(wnd2.getId(), join);
+    this.rteCntx.setNextRelationOperator(wnd1.getSpec().getId(), join);
+    this.rteCntx.setNextRelationOperator(wnd2.getSpec().getId(), join);
     // 3. connect stream operator to the join operator
-    this.rteCntx.setNextRelationOperator(join.getId(), istream);
+    this.rteCntx.setNextRelationOperator(join.getSpec().getId(), istream);
     // 4. connect re-partition operator to the stream operator
-    this.rteCntx.setNextTupleOperator(istream.getId(), par);
+    this.rteCntx.setNextTupleOperator(istream.getSpec().getId(), par);
 
-    // Finally, initialize all operators
-    this.initCntx = new SqlContextManager(context);
     for (Iterator<Operator> iter = this.rteCntx.iterator(); iter.hasNext();) {
-      iter.next().init(this.initCntx);
+      iter.next().init(context);
     }
   }
 }

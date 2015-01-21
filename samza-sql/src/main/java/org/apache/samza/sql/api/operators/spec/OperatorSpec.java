@@ -39,7 +39,7 @@ public interface OperatorSpec {
    * @return
    *     the unique ID of the <code>Operator</code> object
    */
-  public String getId();
+  String getId();
 
   /**
    * Access method to the list of entity names of input variables.
@@ -50,7 +50,7 @@ public interface OperatorSpec {
    * @return
    *     A list of entity names of the inputs
    */
-  public List<String> getInputNames();
+  List<String> getInputNames();
 
   /**
    * Access method to the list of entity name of the output variable
@@ -62,5 +62,5 @@ public interface OperatorSpec {
    *     The entity name of the output
    *
    */
-  public String getOutputName();
+  String getOutputName();
 }

@@ -19,7 +19,7 @@
 
 package org.apache.samza.sql.api.data;
 
-import java.util.Iterator;
+import org.apache.samza.storage.kv.KeyValueStore;
 
 
 /**
@@ -30,49 +30,7 @@ import java.util.Iterator;
  *
  */
 
-public interface Relation {
-
-  /**
-   * Retrieves the tuple from the relation
-   *
-   * @param key
-   *     The primary key for the tuple to be retrieved
-   * @return
-   *     The tuple corresponding to the <code>key</code>
-   */
-  public Tuple get(Object key);
-
-  /**
-   * Store the tuple into the relation
-   *
-   * @param key
-   *     The primary key for the tuple to be stored
-   * @param tuple
-   *     The tuple to be stored in the stored relation
-   * @throws Exception
-   *     Throws exception when failed
-   */
-  public void put(Object key, Tuple tuple) throws Exception;
-
-  /**
-   * Delete the tuple from the relation
-   *
-   * @param key
-   *     The primary key for the tuple to be stored
-   * @return
-   *     The tuple deleted from the stored relation
-   */
-  public Tuple delete(Object key);
-
-  /**
-   * Returns an iterator of the relation
-   *
-   * <p>Note that some relations stored in the remote database may not be able to support this function, such as a remote NoSQL database.
-   *
-   * @return
-   *     The tuple to be stored in the stored relation
-   */
-  public Iterator<Tuple> iterator();
+public interface Relation extends KeyValueStore<Object, Tuple> {
 
   /**
    * get the primary key field name for this table
@@ -80,7 +38,7 @@ public interface Relation {
    * @return
    *     the name of the primary key field
    */
-  public String getPrimaryKey();
+  String getPrimaryKey();
 
   /**
    * get the name of the relation created by CREATE TABLE
@@ -88,5 +46,5 @@ public interface Relation {
    * @return
    *     the relation name
    */
-  public String getName();
+  String getName();
 }

@@ -49,6 +49,6 @@ public interface RelationOperator extends Operator {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception;
+  void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception;
 
 }

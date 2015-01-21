@@ -21,7 +21,6 @@ package org.apache.samza.sql.data;
 
 import org.apache.samza.sql.api.data.IncomingMessageTuple;
 import org.apache.samza.system.IncomingMessageEnvelope;
-import org.apache.samza.system.SystemStreamPartition;
 
 
 public class SystemInputTuple implements IncomingMessageTuple {
@@ -66,12 +65,6 @@ public class SystemInputTuple implements IncomingMessageTuple {
   public IncomingMessageEnvelope getIncomingMessageEnvelope() {
     // TODO Auto-generated method stub
     return this.imsg;
-  }
-
-  @Override
-  public SystemStreamPartition getSystemStreamPartition() {
-    // TODO Auto-generated method stub
-    return this.imsg.getSystemStreamPartition();
   }
 
 }

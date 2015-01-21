@@ -20,15 +20,15 @@
 package org.apache.samza.sql.operators.window;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.task.InitSystemContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
+import org.apache.samza.storage.kv.KeyValueIterator;
+import org.apache.samza.task.TaskContext;
 
 
 /**
@@ -93,7 +93,7 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
 
   private void processWindowChanges(RuntimeSystemContext context) throws Exception {
     if (windowStateChange()) {
-      context.sendToNextRelationOperator(this.spec.getId(), getWindowChanges());
+      context.send(this.spec.getId(), getWindowChanges());
     }
   }
 
@@ -117,7 +117,7 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
   public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
     updateWindowTimeout();
     processWindowChanges(context);
-    context.sendToNextTimeoutOperator(this.spec.getId(), currentSystemNano);
+    context.send(this.spec.getId(), currentSystemNano);
   }
 
   private void updateWindowTimeout() {
@@ -127,14 +127,14 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
   }
 
   @Override
-  public void init(InitSystemContext initContext) throws Exception {
+  public void init(TaskContext context) throws Exception {
     // TODO Auto-generated method stub
     if (this.relation == null) {
-      this.relation = initContext.getRelation(this.spec.getOutputName());
-      Relation wndStates = initContext.getRelation(this.spec.getWndStatesName());
+      this.relation = (Relation) context.getStore(this.spec.getOutputName());
+      Relation wndStates = (Relation) context.getStore(this.spec.getWndStatesName());
       this.windowStates = new ArrayList<WindowState>();
-      for (Iterator<Tuple> iter = wndStates.iterator(); iter.hasNext();) {
-        this.windowStates.add((WindowState) iter.next().getField("WindowState"));
+      for (KeyValueIterator<Object, Tuple> iter = wndStates.all(); iter.hasNext();) {
+        this.windowStates.add((WindowState) iter.next().getValue().getField("WindowState"));
       }
     }
   }

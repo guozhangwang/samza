@@ -19,14 +19,13 @@
 
 package org.apache.samza.sql.operators.stream;
 
-import java.util.Iterator;
-
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.task.InitSystemContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
+import org.apache.samza.storage.kv.KeyValueIterator;
+import org.apache.samza.task.TaskContext;
 
 
 /**
@@ -64,19 +63,19 @@ public class InsertStream extends SimpleOperator implements RelationOperator {
 
   @Override
   public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception {
-    Iterator<Tuple> iterator = deltaRelation.iterator();
+    KeyValueIterator<Object, Tuple> iterator = deltaRelation.all();
     for (; iterator.hasNext();) {
-      Tuple tuple = iterator.next();
+      Tuple tuple = iterator.next().getValue();
       if (!tuple.isDelete()) {
-        context.sendToNextTupleOperator(this.spec.getId(), tuple);
+        context.send(this.spec.getId(), tuple);
       }
     }
   }
 
   @Override
-  public void init(InitSystemContext initContext) throws Exception {
+  public void init(TaskContext context) throws Exception {
     if (this.relation == null) {
-      this.relation = initContext.getRelation(this.spec.getInputRelation());
+      this.relation = (Relation) context.getStore(this.spec.getInputRelation());
     }
   }
 

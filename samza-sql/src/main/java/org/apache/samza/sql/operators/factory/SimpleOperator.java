@@ -44,11 +44,6 @@ public abstract class SimpleOperator implements Operator {
   }
 
   @Override
-  public String getId() {
-    return this.spec.getId();
-  }
-
-  @Override
   public OperatorSpec getSpec() {
     return this.spec;
   }

@@ -20,8 +20,8 @@
 package org.apache.samza.sql.api.operators;
 
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
-import org.apache.samza.sql.api.task.InitSystemContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.task.TaskContext;
 
 
 /**
@@ -31,7 +31,6 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
  * <ul>
  * <li><code>init</code> via the <code>InitSystemContext</code>
  * <li><code>timeout</code> method triggered when timeout happened
- * <li><code>getId</code> that returns the unique ID of the operator in the task
  * <li><code>getSpec</code> that returns the specification object of the operator
  * </ul>
  *
@@ -45,7 +44,7 @@ public interface Operator {
    * @throws Exception
    *     Throw exception if failed to initialize the store
    */
-  public void init(InitSystemContext initContext) throws Exception;
+  void init(TaskContext context) throws Exception;
 
   /**
    * method that is to be called when timer expires
@@ -57,15 +56,7 @@ public interface Operator {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception;
-
-  /**
-   * method to get the unique ID of the operator conveniently
-   *
-   * @return
-   *     the unique ID of the operator
-   */
-  public String getId();
+  void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception;
 
   /**
    * method to the specification of this <code>Operator</code>
@@ -73,6 +64,6 @@ public interface Operator {
    * @return
    *     The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
    */
-  public OperatorSpec getSpec();
+  OperatorSpec getSpec();
 
 }

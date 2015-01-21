@@ -49,7 +49,7 @@ public interface OperatorRoutingContext {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void setSystemInputOperator(TupleOperator inputOp) throws Exception;
+  void setSystemInputOperator(TupleOperator inputOp) throws Exception;
 
   /**
    * This method adds a <code>RelationOperator</code> as one of the input operators
@@ -59,7 +59,7 @@ public interface OperatorRoutingContext {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void setSystemInputOperator(RelationOperator inputOp) throws Exception;
+  void setSystemInputOperator(RelationOperator inputOp) throws Exception;
 
   /**
    * This method returns all operators that directly takes input variables instead of connected to the output from other operators.
@@ -70,7 +70,7 @@ public interface OperatorRoutingContext {
    *     A <code>MultiValueMap</code> that uses the input <code>Tuple</code>'s stream name or <code>Relation</code> name as the key,
    *     and a collection of operators as the value.
    */
-  public MultiValueMap getSystemInputOps();
+  MultiValueMap getSystemInputOps();
 
   /**
    * This method sets the next <code>RelationOperator</code> that should take the output of the current operator.
@@ -82,7 +82,7 @@ public interface OperatorRoutingContext {
    * @throws Exception
    *     Throws exception if failed.
    */
-  public void setNextRelationOperator(String currentOpId, RelationOperator nextOp) throws Exception;
+  void setNextRelationOperator(String currentOpId, RelationOperator nextOp) throws Exception;
 
   /**
    * This method sets the next <code>TupleOperator</code> that should take the output of the current operator
@@ -94,7 +94,7 @@ public interface OperatorRoutingContext {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void setNextTupleOperator(String currentOpId, TupleOperator nextOp) throws Exception;
+  void setNextTupleOperator(String currentOpId, TupleOperator nextOp) throws Exception;
 
   /**
    * This method gets the next <code>RelationOperator</code> connected to the current operator
@@ -104,7 +104,7 @@ public interface OperatorRoutingContext {
    * @return
    *     The <code>RelationOperator</code> connected to the current operator
    */
-  public RelationOperator getNextRelationOperator(String currentOpId);
+  RelationOperator getNextRelationOperator(String currentOpId);
 
   /**
    * This method gets the next <code>TupleOperator</code> connected to the current operator
@@ -114,7 +114,7 @@ public interface OperatorRoutingContext {
    * @return
    *     The <code>TupleOperator</code> connected to the current operator
    */
-  public TupleOperator getNextTupleOperator(String currentOpId);
+  TupleOperator getNextTupleOperator(String currentOpId);
 
   /**
    * This method gets the next operator to be triggered in terms of a timeout event
@@ -124,7 +124,7 @@ public interface OperatorRoutingContext {
    * @return
    *     The next operator connected to the current one
    */
-  public Operator getNextTimeoutOperator(String currentOpId);
+  Operator getNextTimeoutOperator(String currentOpId);
 
   /**
    * This method provides an iterator to go through all operators connected via <code>OperatorRoutingContext</code>
@@ -132,6 +132,6 @@ public interface OperatorRoutingContext {
    * @return
    *     An <code>Iterator</code> for all operators connected in the routing context
    */
-  public Iterator<Operator> iterator();
+  Iterator<Operator> iterator();
 
 }

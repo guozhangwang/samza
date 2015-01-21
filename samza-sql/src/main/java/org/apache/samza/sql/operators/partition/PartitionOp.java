@@ -22,11 +22,11 @@ package org.apache.samza.sql.operators.partition;
 import org.apache.samza.sql.api.data.OutgoingMessageTuple;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.task.InitSystemContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
+import org.apache.samza.task.TaskContext;
 
 
 /**
@@ -76,7 +76,7 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
   }
 
   @Override
-  public void init(InitSystemContext initContext) throws Exception {
+  public void init(TaskContext context) throws Exception {
     // TODO Auto-generated method stub
     // No need to initialize store since all inputs are immediately send out
   }
@@ -89,7 +89,7 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
 
   @Override
   public void process(Tuple tuple, RuntimeSystemContext context) throws Exception {
-    context.sendToNextTupleOperator(this.getId(), this.setPartitionKey(tuple));
+    context.send(this.spec.getId(), this.setPartitionKey(tuple));
   }
 
   private OutgoingMessageTuple setPartitionKey(Tuple tuple) throws Exception {
@@ -126,16 +126,6 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
       @Override
       public OutgoingMessageEnvelope getOutgoingMessageEnvelope() {
         return this.omsg;
-      }
-
-      @Override
-      public SystemStream getSystemStream() {
-        return this.omsg.getSystemStream();
-      }
-
-      @Override
-      public Object getPartitionKey() {
-        return this.omsg.getPartitionKey();
       }
     };
   }

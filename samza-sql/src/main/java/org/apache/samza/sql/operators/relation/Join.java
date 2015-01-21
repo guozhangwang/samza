@@ -23,9 +23,9 @@ import java.util.List;
 
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.task.InitSystemContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
+import org.apache.samza.task.TaskContext;
 
 
 /**
@@ -33,6 +33,8 @@ import org.apache.samza.sql.operators.factory.SimpleOperator;
  *
  */
 public class Join extends SimpleOperator implements RelationOperator {
+
+  private final JoinSpec spec;
 
   /**
    * The input relations
@@ -55,6 +57,7 @@ public class Join extends SimpleOperator implements RelationOperator {
    */
   public Join(JoinSpec spec) {
     super(spec);
+    this.spec = spec;
   }
 
   /**
@@ -72,6 +75,7 @@ public class Join extends SimpleOperator implements RelationOperator {
    */
   public Join(String id, List<String> joinIns, String joinOut, List<String> joinKeys) {
     super(new JoinSpec(id, joinIns, joinOut, joinKeys));
+    this.spec = (JoinSpec) this.getSpec();
   }
 
   private boolean hasPendingChanges() {
@@ -103,19 +107,19 @@ public class Join extends SimpleOperator implements RelationOperator {
   }
 
   @Override
-  public void init(InitSystemContext initContext) throws Exception {
+  public void init(TaskContext context) throws Exception {
     for (String relation : this.getSpec().getInputNames()) {
-      inputs.add(initContext.getRelation(relation));
+      inputs.add((Relation) context.getStore(relation));
     }
-    this.output = initContext.getRelation(this.getSpec().getOutputName());
+    this.output = (Relation) context.getStore(this.getSpec().getOutputName());
   }
 
   @Override
   public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
     if (hasPendingChanges()) {
-      context.sendToNextRelationOperator(this.getId(), getPendingChanges());
+      context.send(this.spec.getId(), getPendingChanges());
     }
-    context.sendToNextTimeoutOperator(this.getId(), currentSystemNano);
+    context.send(this.spec.getId(), currentSystemNano);
   }
 
   @Override
@@ -123,7 +127,7 @@ public class Join extends SimpleOperator implements RelationOperator {
     // calculate join based on the input <code>deltaRelation</code>
     join(deltaRelation);
     if (hasOutputChanges()) {
-      context.sendToNextRelationOperator(this.getId(), getOutputChanges());
+      context.send(this.spec.getId(), getOutputChanges());
     }
   }
 }

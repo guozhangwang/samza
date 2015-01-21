@@ -40,7 +40,7 @@ public interface SqlOperatorFactory {
    * @return
    *     The relation operator object
    */
-  public RelationOperator getRelationOperator(OperatorSpec spec);
+  RelationOperator getRelationOperator(OperatorSpec spec);
 
   /**
    * Interface method to create/get the <code>TupleOperator</code> object
@@ -50,6 +50,6 @@ public interface SqlOperatorFactory {
    * @return
    *     The tuple operator object
    */
-  public TupleOperator getTupleOperator(OperatorSpec spec);
+  TupleOperator getTupleOperator(OperatorSpec spec);
 
 }

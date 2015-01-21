@@ -45,6 +45,6 @@ public interface TupleOperator extends Operator {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void process(Tuple tuple, RuntimeSystemContext context) throws Exception;
+  void process(Tuple tuple, RuntimeSystemContext context) throws Exception;
 
 }

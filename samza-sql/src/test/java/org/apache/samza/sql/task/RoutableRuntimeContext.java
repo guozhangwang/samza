@@ -25,7 +25,6 @@ import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.task.MessageCollector;
-import org.apache.samza.task.TaskCoordinator;
 
 
 /**
@@ -35,22 +34,20 @@ import org.apache.samza.task.TaskCoordinator;
 public class RoutableRuntimeContext implements RuntimeSystemContext {
 
   private final MessageCollector collector;
-  private final TaskCoordinator coordinator;
   private final OperatorRoutingContext rteCntx;
 
-  public RoutableRuntimeContext(MessageCollector collector, TaskCoordinator coordinator, OperatorRoutingContext rteCntx) {
+  public RoutableRuntimeContext(MessageCollector collector, OperatorRoutingContext rteCntx) {
     this.collector = collector;
-    this.coordinator = coordinator;
     this.rteCntx = rteCntx;
   }
 
   @Override
-  public void sendToNextRelationOperator(String currentOpId, Relation deltaRelation) throws Exception {
+  public void send(String currentOpId, Relation deltaRelation) throws Exception {
     this.rteCntx.getNextRelationOperator(currentOpId).process(deltaRelation, this);
   }
 
   @Override
-  public void sendToNextTupleOperator(String currentOpId, Tuple tuple) throws Exception {
+  public void send(String currentOpId, Tuple tuple) throws Exception {
     if (this.rteCntx.getNextTupleOperator(currentOpId) != null) {
       // by default, always send to the next operator
       this.rteCntx.getNextTupleOperator(currentOpId).process(tuple, this);
@@ -62,7 +59,7 @@ public class RoutableRuntimeContext implements RuntimeSystemContext {
   }
 
   @Override
-  public void sendToNextTimeoutOperator(String currentOpId, long currentSystemNano) throws Exception {
+  public void send(String currentOpId, long currentSystemNano) throws Exception {
     this.rteCntx.getNextTimeoutOperator(currentOpId).timeout(currentSystemNano, this);
   }
 

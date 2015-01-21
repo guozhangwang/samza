@@ -26,8 +26,6 @@ import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.storage.kv.KeyValueStore;
-import org.apache.samza.task.MessageCollector;
-import org.apache.samza.task.TaskCoordinator;
 
 
 /**
@@ -36,29 +34,24 @@ import org.apache.samza.task.TaskCoordinator;
  */
 public class StoredRuntimeContext implements RuntimeSystemContext {
 
-  private final MessageCollector collector;
-  private final TaskCoordinator coordinator;
   private final KeyValueStore<String, List<Object>> outputStore;
 
-  public StoredRuntimeContext(MessageCollector collector, TaskCoordinator coordinator,
-      KeyValueStore<String, List<Object>> store) {
-    this.collector = collector;
-    this.coordinator = coordinator;
+  public StoredRuntimeContext(KeyValueStore<String, List<Object>> store) {
     this.outputStore = store;
   }
 
   @Override
-  public void sendToNextRelationOperator(String currentOpId, Relation deltaRelation) throws Exception {
+  public void send(String currentOpId, Relation deltaRelation) throws Exception {
     saveOutput(currentOpId, deltaRelation);
   }
 
   @Override
-  public void sendToNextTupleOperator(String currentOpId, Tuple tuple) throws Exception {
+  public void send(String currentOpId, Tuple tuple) throws Exception {
     saveOutput(currentOpId, tuple);
   }
 
   @Override
-  public void sendToNextTimeoutOperator(String currentOpId, long currentSystemNano) throws Exception {
+  public void send(String currentOpId, long currentSystemNano) throws Exception {
     // TODO Auto-generated method stub
   }
 

@@ -20,7 +20,6 @@
 package org.apache.samza.sql.api.data;
 
 import org.apache.samza.system.OutgoingMessageEnvelope;
-import org.apache.samza.system.SystemStream;
 
 
 /**
@@ -41,22 +40,6 @@ public interface OutgoingMessageTuple extends Tuple {
    * @return
    *     the <code>OutgoingMessageEnvelope</code> associated with this tuple
    */
-  public OutgoingMessageEnvelope getOutgoingMessageEnvelope();
-
-  /**
-   * Get method for the <code>SystemStream</code> object associated with this tuple
-   *
-   * @return
-   *    the <code>SystemStream</code> object
-   */
-  public SystemStream getSystemStream();
-
-  /**
-   * Get method for the <code>partitionKey</code> used in the output tuple
-   *
-   * @return
-   *     the <code>partitionKey</code>
-   */
-  public Object getPartitionKey();
+  OutgoingMessageEnvelope getOutgoingMessageEnvelope();
 
 }

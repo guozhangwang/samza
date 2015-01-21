@@ -40,7 +40,7 @@ public interface RuntimeSystemContext {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void sendToNextRelationOperator(String currentOpId, Relation deltaRelation) throws Exception;
+  void send(String currentOpId, Relation deltaRelation) throws Exception;
 
   /**
    * This method allows the current operator send its tuple output to next
@@ -52,7 +52,7 @@ public interface RuntimeSystemContext {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void sendToNextTupleOperator(String currentOpId, Tuple tuple) throws Exception;
+  void send(String currentOpId, Tuple tuple) throws Exception;
 
   /**
    * This method allows the current operator triggers timeout actions via the <code>RuntimeSystemContext</code>
@@ -64,6 +64,6 @@ public interface RuntimeSystemContext {
    * @throws Exception
    *     Throws exception if failed
    */
-  public void sendToNextTimeoutOperator(String currentOpId, long currentSystemNano) throws Exception;
+  void send(String currentOpId, long currentSystemNano) throws Exception;
 
 }

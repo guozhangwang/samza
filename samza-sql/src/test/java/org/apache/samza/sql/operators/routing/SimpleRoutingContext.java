@@ -40,7 +40,7 @@ public class SimpleRoutingContext implements OperatorRoutingContext {
   private MultiValueMap sysInputOps = new MultiValueMap();
 
   private void addOperator(Operator op) {
-    operators.put(op.getId(), op);
+    operators.put(op.getSpec().getId(), op);
   }
 
   @Override
