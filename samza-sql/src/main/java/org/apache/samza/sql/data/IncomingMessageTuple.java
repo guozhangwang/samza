@@ -16,55 +16,65 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.samza.sql.data;
 
-import org.apache.samza.sql.api.data.IncomingMessageTuple;
+import org.apache.samza.sql.api.data.EntityName;
+import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.system.IncomingMessageEnvelope;
 
 
-public class SystemInputTuple implements IncomingMessageTuple {
+/**
+ * This class implements a <code>Tuple</code> class that encapsulates <code>IncomingMessageEnvelope</code> from the system
+ *
+ */
+public class IncomingMessageTuple implements Tuple {
+  /**
+   * Incoming message envelope
+   */
   private final IncomingMessageEnvelope imsg;
 
-  public SystemInputTuple(IncomingMessageEnvelope imsg) {
+  /**
+   * The entity name for the incoming system stream
+   */
+  private final EntityName strmEntity;
+
+  /**
+   * Ctor to create a <code>IncomingMessageTuple</code> from <code>IncomingMessageEnvelope</code>
+   *
+   * @param imsg The incoming system message
+   */
+  public IncomingMessageTuple(IncomingMessageEnvelope imsg) {
     this.imsg = imsg;
+    this.strmEntity =
+        EntityName.getStreamName(String.format("%s:%s", imsg.getSystemStreamPartition().getSystem(), imsg
+            .getSystemStreamPartition().getStream()));
   }
 
+  // TODO: the return type should be changed to the generic data type
   @Override
   public Object getMessage() {
-    // TODO Auto-generated method stub
     return this.imsg.getMessage();
   }
 
   @Override
   public boolean isDelete() {
-    // TODO Auto-generated method stub
     return false;
   }
 
   @Override
   public Object getField(String name) {
-    // TODO Auto-generated method stub.
+    // TODO: get field should be implemented as part of the schema / data Serde
     return null;
   }
 
   @Override
   public Object getKey() {
-    // TODO Auto-generated method stub
-    return this.imsg.getKey();
+    return imsg.getKey();
   }
 
   @Override
-  public String getStreamName() {
-    // Format the system stream name s.t. it would be unique in the system
-    return String.format("%s:%s", this.imsg.getSystemStreamPartition().getSystemStream().getSystem(), this.imsg
-        .getSystemStreamPartition().getSystemStream().getStream());
-  }
-
-  @Override
-  public IncomingMessageEnvelope getIncomingMessageEnvelope() {
-    // TODO Auto-generated method stub
-    return this.imsg;
+  public EntityName getStreamName() {
+    return this.strmEntity;
   }
 
 }

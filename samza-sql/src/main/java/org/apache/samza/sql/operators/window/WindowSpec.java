@@ -19,23 +19,48 @@
 
 package org.apache.samza.sql.operators.window;
 
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 
+/**
+ * This class implements the specification class for the build-in <code>BoundedTimeWindow</code> operator
+ */
 public class WindowSpec extends SimpleOperatorSpec implements OperatorSpec {
 
+  /**
+   * The window size in seconds
+   */
   private final int wndSizeSec;
 
-  public WindowSpec(String id, String input, String output, int lengthSec) {
+  /**
+   * Default ctor of the <code>WindowSpec</code> object
+   *
+   * @param id The identifier of the operator
+   * @param input The input stream entity
+   * @param output The output relation entity
+   * @param lengthSec The window size in seconds
+   */
+  public WindowSpec(String id, EntityName input, EntityName output, int lengthSec) {
     super(id, input, output);
     this.wndSizeSec = lengthSec;
   }
 
+  /**
+   * Method to get the window state relation name
+   *
+   * @return The window state relation name
+   */
   public String getWndStatesName() {
     return this.getId() + "-wnd-state";
   }
 
+  /**
+   * Method to get the window size in seconds
+   *
+   * @return The window size in seconds
+   */
   public int getWndSizeSec() {
     return this.wndSizeSec;
   }

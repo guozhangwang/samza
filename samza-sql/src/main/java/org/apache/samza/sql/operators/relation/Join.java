@@ -19,13 +19,18 @@
 
 package org.apache.samza.sql.operators.relation;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.samza.config.Config;
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
+import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
+import org.apache.samza.task.TaskCoordinator;
 
 
 /**
@@ -48,12 +53,9 @@ public class Join extends SimpleOperator implements RelationOperator {
   private Relation output = null;
 
   /**
-   * ctor that creates <code>Join</code> operator based on the specification.
+   * Ctor that creates <code>Join</code> operator based on the specification.
    *
-   * <p>This version of constructor is often used in an implementation of <code>SqlOperatorFactory</code>
-   *
-   * @param spec
-   *     The <code>JoinSpec</code> object that specifies the join operator
+   * @param spec The <code>JoinSpec</code> object that specifies the join operator
    */
   public Join(JoinSpec spec) {
     super(spec);
@@ -63,18 +65,21 @@ public class Join extends SimpleOperator implements RelationOperator {
   /**
    * An alternative ctor that allows users to create a join operator randomly.
    *
-   * @param id
-   *     The identifier of the join operator
-   * @param joinIns
-   *     The list of input relation names of the join
-   * @param joinOut
-   *     The output relation name of the join
-   * @param joinKeys
-   *     The list of keys used in the join. Each entry in the <code>joinKeys</code> is the key name used in one of the input relations.
+   * @param id The identifier of the join operator
+   * @param joinIns The list of input relation names of the join
+   * @param joinOut The output relation name of the join
+   * @param joinKeys The list of keys used in the join. Each entry in the <code>joinKeys</code> is the key name used in one of the input relations.
    *     The order of the <code>joinKeys</code> MUST be the same as their corresponding relation names in <code>joinIns</code>
    */
+  @SuppressWarnings("serial")
   public Join(String id, List<String> joinIns, String joinOut, List<String> joinKeys) {
-    super(new JoinSpec(id, joinIns, joinOut, joinKeys));
+    super(new JoinSpec(id, new ArrayList<EntityName>() {
+      {
+        for (String name : joinIns) {
+          add(EntityName.getRelationName(name));
+        }
+      }
+    }, EntityName.getRelationName(joinOut), joinKeys));
     this.spec = (JoinSpec) this.getSpec();
   }
 
@@ -107,19 +112,20 @@ public class Join extends SimpleOperator implements RelationOperator {
   }
 
   @Override
-  public void init(TaskContext context) throws Exception {
-    for (String relation : this.getSpec().getInputNames()) {
-      inputs.add((Relation) context.getStore(relation));
+  public void init(Config config, TaskContext context) throws Exception {
+    for (EntityName relation : this.spec.getInputNames()) {
+      inputs.add((Relation) context.getStore(relation.toString()));
     }
-    this.output = (Relation) context.getStore(this.getSpec().getOutputName());
+    this.output = (Relation) context.getStore(this.spec.getOutputName().toString());
   }
 
   @Override
-  public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
+  public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
+    RuntimeSystemContext context = (RuntimeSystemContext) collector;
     if (hasPendingChanges()) {
-      context.send(this.spec.getId(), getPendingChanges());
+      context.send(getPendingChanges());
     }
-    context.send(this.spec.getId(), currentSystemNano);
+    context.timeout(this.spec.getOutputNames());
   }
 
   @Override
@@ -127,7 +133,7 @@ public class Join extends SimpleOperator implements RelationOperator {
     // calculate join based on the input <code>deltaRelation</code>
     join(deltaRelation);
     if (hasOutputChanges()) {
-      context.send(this.spec.getId(), getOutputChanges());
+      context.send(getOutputChanges());
     }
   }
 }

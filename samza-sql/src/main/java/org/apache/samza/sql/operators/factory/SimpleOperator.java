@@ -24,7 +24,7 @@ import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 
 
 /**
- * An abstract class that encapsulate the basis information and methods all operator classes should implement.
+ * An abstract class that encapsulate the basic information and methods that all operator classes should implement.
  *
  */
 public abstract class SimpleOperator implements Operator {
@@ -34,10 +34,9 @@ public abstract class SimpleOperator implements Operator {
   private final OperatorSpec spec;
 
   /**
-   * ctor of <code>SimpleOperator</code> class
+   * Ctor of <code>SimpleOperator</code> class
    *
-   * @param spec
-   *     the specification of this operator
+   * @param spec The specification of this operator
    */
   public SimpleOperator(OperatorSpec spec) {
     this.spec = spec;

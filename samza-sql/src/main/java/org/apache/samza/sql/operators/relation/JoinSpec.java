@@ -22,18 +22,38 @@ package org.apache.samza.sql.operators.relation;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 
+/**
+ * This class implements specification class for the build-in <code>Join</code> operator
+ */
 public class JoinSpec extends SimpleOperatorSpec implements OperatorSpec {
+  /**
+   * Join keys defined for each input relation
+   */
   private final List<String> joinKeys = new ArrayList<String>();
 
-  public JoinSpec(String id, List<String> joinIns, String joinOut, List<String> joinKeys) {
+  /**
+   * Default ctor for the <code>JoinSpec</code>
+   *
+   * @param id Unique ID of the <code>Join</code> object
+   * @param joinIns The list of input relations
+   * @param joinOut The output relation
+   * @param joinKeys The list of join keys in input relations
+   */
+  public JoinSpec(String id, List<EntityName> joinIns, EntityName joinOut, List<String> joinKeys) {
     super(id, joinIns, joinOut);
     this.joinKeys.addAll(joinKeys);
   }
 
+  /**
+   * Method to get the list of join keys
+   *
+   * @return The list of join keys
+   */
   public List<String> getJoinKeys() {
     return this.joinKeys;
   }

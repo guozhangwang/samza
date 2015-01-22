@@ -22,13 +22,17 @@ package org.apache.samza.sql.operators.window;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.samza.config.Config;
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.storage.kv.KeyValueIterator;
+import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
+import org.apache.samza.task.TaskCoordinator;
 
 
 /**
@@ -53,12 +57,11 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
   private List<WindowState> windowStates = null;
 
   /**
-   * ctor that takes <code>WindowSpec</code> specification as input argument
+   * Ctor that takes <code>WindowSpec</code> specification as input argument
    *
    * <p>This version of constructor is often used in an implementation of <code>SqlOperatorFactory</code>
    *
-   * @param spec
-   *     The window specification object
+   * @param spec The window specification object
    */
   public BoundedTimeWindow(WindowSpec spec) {
     super(spec);
@@ -68,17 +71,13 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
   /**
    * A simplified version of ctor that allows users to randomly created a window operator w/o spec object
    *
-   * @param wndId
-   *     The identifier of this window operator
-   * @param lengthSec
-   *     The window size in seconds
-   * @param input
-   *     The input stream name
-   * @param output
-   *     The output relation name
+   * @param wndId The identifier of this window operator
+   * @param lengthSec The window size in seconds
+   * @param input The input stream name
+   * @param output The output relation name
    */
   public BoundedTimeWindow(String wndId, int lengthSec, String input, String output) {
-    super(new WindowSpec(wndId, input, output, lengthSec));
+    super(new WindowSpec(wndId, EntityName.getStreamName(input), EntityName.getRelationName(output), lengthSec));
     this.spec = (WindowSpec) super.getSpec();
   }
 
@@ -93,7 +92,7 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
 
   private void processWindowChanges(RuntimeSystemContext context) throws Exception {
     if (windowStateChange()) {
-      context.send(this.spec.getId(), getWindowChanges());
+      context.send(getWindowChanges());
     }
   }
 
@@ -113,13 +112,6 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
     // And the correpsonding deltaChanges is also calculated here.
   }
 
-  @Override
-  public void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception {
-    updateWindowTimeout();
-    processWindowChanges(context);
-    context.send(this.spec.getId(), currentSystemNano);
-  }
-
   private void updateWindowTimeout() {
     // TODO Auto-generated method stub
     // The window states are updated here
@@ -127,10 +119,18 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
   }
 
   @Override
-  public void init(TaskContext context) throws Exception {
+  public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
+    RuntimeSystemContext context = (RuntimeSystemContext) collector;
+    updateWindowTimeout();
+    processWindowChanges(context);
+    context.timeout(this.spec.getOutputNames());
+  }
+
+  @Override
+  public void init(Config config, TaskContext context) throws Exception {
     // TODO Auto-generated method stub
     if (this.relation == null) {
-      this.relation = (Relation) context.getStore(this.spec.getOutputName());
+      this.relation = (Relation) context.getStore(this.spec.getOutputName().toString());
       Relation wndStates = (Relation) context.getStore(this.spec.getWndStatesName());
       this.windowStates = new ArrayList<WindowState>();
       for (KeyValueIterator<Object, Tuple> iter = wndStates.all(); iter.hasNext();) {

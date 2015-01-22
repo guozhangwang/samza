@@ -19,12 +19,19 @@
 
 package org.apache.samza.sql.task;
 
-import org.apache.samza.sql.api.data.OutgoingMessageTuple;
+import java.util.List;
+
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
+import org.apache.samza.sql.api.operators.Operator;
+import org.apache.samza.sql.api.operators.RelationOperator;
+import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.task.MessageCollector;
+import org.apache.samza.task.TaskCoordinator;
 
 
 /**
@@ -34,33 +41,41 @@ import org.apache.samza.task.MessageCollector;
 public class RoutableRuntimeContext implements RuntimeSystemContext {
 
   private final MessageCollector collector;
+  private final TaskCoordinator coordinator;
   private final OperatorRoutingContext rteCntx;
 
-  public RoutableRuntimeContext(MessageCollector collector, OperatorRoutingContext rteCntx) {
+  public RoutableRuntimeContext(MessageCollector collector, TaskCoordinator coordinator, OperatorRoutingContext rteCntx) {
     this.collector = collector;
+    this.coordinator = coordinator;
     this.rteCntx = rteCntx;
   }
 
   @Override
-  public void send(String currentOpId, Relation deltaRelation) throws Exception {
-    this.rteCntx.getNextRelationOperator(currentOpId).process(deltaRelation, this);
-  }
-
-  @Override
-  public void send(String currentOpId, Tuple tuple) throws Exception {
-    if (this.rteCntx.getNextTupleOperator(currentOpId) != null) {
-      // by default, always send to the next operator
-      this.rteCntx.getNextTupleOperator(currentOpId).process(tuple, this);
-    } else if (tuple instanceof OutgoingMessageTuple) {
-      // if there is no next operator, check whether the tuple is an OutgoingMessageTuple
-      this.collector.send(((OutgoingMessageTuple) tuple).getOutgoingMessageEnvelope());
+  public void send(Relation deltaRelation) throws Exception {
+    for (RelationOperator op : this.rteCntx.getRelationOperators(deltaRelation.getName())) {
+      op.process(deltaRelation, this);
     }
-    throw new IllegalStateException("No next tuple operator found and the tuple is not an OutgoingMessageTuple");
   }
 
   @Override
-  public void send(String currentOpId, long currentSystemNano) throws Exception {
-    this.rteCntx.getNextTimeoutOperator(currentOpId).timeout(currentSystemNano, this);
+  public void send(Tuple tuple) throws Exception {
+    for (TupleOperator op : this.rteCntx.getTupleOperators(tuple.getStreamName())) {
+      op.process(tuple, this);
+    }
+  }
+
+  @Override
+  public void timeout(List<EntityName> outputs) throws Exception {
+    for (EntityName output : outputs) {
+      for (Operator op : this.rteCntx.getNextOperators(output)) {
+        op.window(this, this.coordinator);
+      }
+    }
+  }
+
+  @Override
+  public void send(OutgoingMessageEnvelope envelope) {
+    this.collector.send(envelope);
   }
 
 }

@@ -36,14 +36,11 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
  */
 public interface TupleOperator extends Operator {
   /**
-   * interface method to process on an input tuple.
+   * Interface method to process on an input tuple.
    *
-   * @param tuple
-   *     The input tuple, which has the incoming message from a stream
-   * @param context
-   *     The runtime context that accepts outputs from the operator
-   * @throws Exception
-   *     Throws exception if failed
+   * @param tuple The input tuple, which has the incoming message from a stream
+   * @param context The runtime context that accepts outputs from the operator
+   * @throws Exception Throws exception if failed
    */
   void process(Tuple tuple, RuntimeSystemContext context) throws Exception;
 

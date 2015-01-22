@@ -22,10 +22,12 @@ package org.apache.samza.sql.task;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.storage.kv.KeyValueStore;
+import org.apache.samza.system.OutgoingMessageEnvelope;
 
 
 /**
@@ -34,39 +36,46 @@ import org.apache.samza.storage.kv.KeyValueStore;
  */
 public class StoredRuntimeContext implements RuntimeSystemContext {
 
-  private final KeyValueStore<String, List<Object>> outputStore;
+  private final KeyValueStore<EntityName, List<Object>> outputStore;
 
-  public StoredRuntimeContext(KeyValueStore<String, List<Object>> store) {
+  public StoredRuntimeContext(KeyValueStore<EntityName, List<Object>> store) {
     this.outputStore = store;
   }
 
   @Override
-  public void send(String currentOpId, Relation deltaRelation) throws Exception {
-    saveOutput(currentOpId, deltaRelation);
+  public void send(Relation deltaRelation) throws Exception {
+    saveOutput(deltaRelation.getName(), deltaRelation);
   }
 
   @Override
-  public void send(String currentOpId, Tuple tuple) throws Exception {
-    saveOutput(currentOpId, tuple);
+  public void send(Tuple tuple) throws Exception {
+    saveOutput(tuple.getStreamName(), tuple);
   }
 
   @Override
-  public void send(String currentOpId, long currentSystemNano) throws Exception {
+  public void timeout(List<EntityName> outputs) throws Exception {
     // TODO Auto-generated method stub
   }
 
-  public List<Object> removeOutput(String id) {
+  public List<Object> removeOutput(EntityName id) {
     List<Object> output = outputStore.get(id);
     outputStore.delete(id);
     return output;
   }
 
-  private void saveOutput(String currentOpId, Object output) {
-    if (this.outputStore.get(currentOpId) == null) {
-      this.outputStore.put(currentOpId, new ArrayList<Object>());
+  private void saveOutput(EntityName name, Object output) {
+    if (this.outputStore.get(name) == null) {
+      this.outputStore.put(name, new ArrayList<Object>());
     }
-    List<Object> outputs = this.outputStore.get(currentOpId);
+    List<Object> outputs = this.outputStore.get(name);
     outputs.add(output);
+  }
+
+  @Override
+  public void send(OutgoingMessageEnvelope envelope) {
+    saveOutput(
+        EntityName.getStreamName(envelope.getSystemStream().getSystem() + ":" + envelope.getSystemStream().getStream()),
+        envelope);
   }
 
 }

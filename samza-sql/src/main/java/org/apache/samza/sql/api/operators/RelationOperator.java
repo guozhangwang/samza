@@ -37,17 +37,14 @@ import org.apache.samza.sql.api.task.RuntimeSystemContext;
 public interface RelationOperator extends Operator {
 
   /**
-   * method to perform a relational algebra on a set of relations, or a relation-to-stream function
+   * Method to perform a relational algebra on a set of relations, or a relation-to-stream function
    *
    * <p> The actual implementation of relational logic is performed by the implementation of this method.
    * The <code>context</code> object is used by the operator to send their output to
    *
-   * @param deltaRelation
-   *     the changed rows in the input relation, including the inserts/deletes/updates
-   * @param context
-   *     the runtime context object that accepts outputs from the operator
-   * @throws Exception
-   *     Throws exception if failed
+   * @param deltaRelation The changed rows in the input relation, including the inserts/deletes/updates
+   * @param context The runtime context object that accepts outputs from the operator
+   * @throws Exception Throws exception if failed
    */
   void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception;
 

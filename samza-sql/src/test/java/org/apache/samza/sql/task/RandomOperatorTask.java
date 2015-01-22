@@ -23,9 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.samza.config.Config;
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.data.SystemInputTuple;
+import org.apache.samza.sql.data.IncomingMessageTuple;
 import org.apache.samza.sql.operators.relation.Join;
 import org.apache.samza.sql.operators.window.BoundedTimeWindow;
 import org.apache.samza.storage.kv.KeyValueIterator;
@@ -49,15 +50,15 @@ import org.apache.samza.task.WindowableTask;
  *
  */
 public class RandomOperatorTask implements StreamTask, InitableTask, WindowableTask {
-  private KeyValueStore<String, List<Object>> opOutputStore;
+  private KeyValueStore<EntityName, List<Object>> opOutputStore;
   private BoundedTimeWindow wndOp1;
   private BoundedTimeWindow wndOp2;
   private Join joinOp;
 
-  private BoundedTimeWindow getWindowOp(String streamName) {
-    if (streamName.equals("kafka:stream1")) {
+  private BoundedTimeWindow getWindowOp(EntityName streamName) {
+    if (streamName.equals(EntityName.getStreamName("kafka:stream1"))) {
       return this.wndOp1;
-    } else if (streamName.equals("kafka:stream2")) {
+    } else if (streamName.equals(EntityName.getStreamName("kafka:stream2"))) {
       return this.wndOp2;
     }
 
@@ -82,12 +83,12 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     StoredRuntimeContext context = new StoredRuntimeContext(this.opOutputStore);
 
     // construct the input tuple
-    SystemInputTuple ituple = new SystemInputTuple(envelope);
+    IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
 
     // based on tuple's stream name, get the window op and run process()
     BoundedTimeWindow wndOp = getWindowOp(ituple.getStreamName());
     wndOp.process(ituple, context);
-    List<Object> wndOutputs = context.removeOutput(wndOp.getSpec().getId());
+    List<Object> wndOutputs = context.removeOutput(wndOp.getSpec().getOutputNames().get(0));
     if (wndOutputs.isEmpty()) {
       return;
     }
@@ -98,7 +99,7 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
       this.joinOp.process(relation, context);
     }
     // get the output from the join operator and send them
-    processJoinOutput(context.removeOutput(this.joinOp.getSpec().getId()), collector);
+    processJoinOutput(context.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
 
   }
 
@@ -106,30 +107,28 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // create the runtime context w/ the output store
     StoredRuntimeContext context = new StoredRuntimeContext(this.opOutputStore);
-    long sysTimeNano = System.nanoTime();
 
     // trigger timeout event on both window operators
-    this.wndOp1.timeout(sysTimeNano, context);
-    this.wndOp2.timeout(sysTimeNano, context);
+    this.wndOp1.window(context, coordinator);
+    this.wndOp2.window(context, coordinator);
 
     // for all outputs from the window operators, call joinOp.process()
-    for (Object input : context.removeOutput(this.wndOp1.getSpec().getId())) {
+    for (Object input : context.removeOutput(this.wndOp1.getSpec().getOutputNames().get(0))) {
       Relation relation = (Relation) input;
       this.joinOp.process(relation, context);
     }
-    for (Object input : context.removeOutput(this.wndOp2.getSpec().getId())) {
+    for (Object input : context.removeOutput(this.wndOp2.getSpec().getOutputNames().get(0))) {
       Relation relation = (Relation) input;
       this.joinOp.process(relation, context);
     }
 
     // get the output from the join operator and send them
-    processJoinOutput(context.removeOutput(this.joinOp.getSpec().getId()), collector);
+    processJoinOutput(context.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void init(Config config, TaskContext context) throws Exception {
-    // TODO Auto-generated method stub
     // 1. create a fixed length 10 sec window operator
     this.wndOp1 = new BoundedTimeWindow("wndOp1", 10, "kafka:stream1", "relation1");
     this.wndOp2 = new BoundedTimeWindow("wndOp2", 10, "kafka:stream2", "relation2");
@@ -142,10 +141,11 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     joinKeys.add("key2");
     this.joinOp = new Join("joinOp", inputRelations, "joinOutput", joinKeys);
     // Finally, initialize all operators
-    this.opOutputStore = (KeyValueStore<String, List<Object>>) context.getStore("samza-sql-operator-output-kvstore");
-    this.wndOp1.init(context);
-    this.wndOp2.init(context);
-    this.joinOp.init(context);
+    this.opOutputStore =
+        (KeyValueStore<EntityName, List<Object>>) context.getStore("samza-sql-operator-output-kvstore");
+    this.wndOp1.init(config, context);
+    this.wndOp2.init(config, context);
+    this.joinOp.init(config, context);
   }
 
 }

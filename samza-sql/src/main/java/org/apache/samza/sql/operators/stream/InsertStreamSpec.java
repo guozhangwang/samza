@@ -19,18 +19,24 @@
 
 package org.apache.samza.sql.operators.stream;
 
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 
+/**
+ * Example implementation of specification of <code>InsertStream</code> operator
+ */
 public class InsertStreamSpec extends SimpleOperatorSpec implements OperatorSpec {
 
-  public InsertStreamSpec(String id, String input, String output) {
+  /**
+   * Default ctor of <code>InsertStreamSpec</code>
+   *
+   * @param id The identifier of the operator
+   * @param input The input relation entity
+   * @param output The output stream entity
+   */
+  public InsertStreamSpec(String id, EntityName input, EntityName output) {
     super(id, input, output);
   }
-
-  public String getInputRelation() {
-    return this.getInputNames().get(0);
-  }
-
 }

@@ -20,49 +20,23 @@
 package org.apache.samza.sql.api.operators;
 
 import org.apache.samza.sql.api.operators.spec.OperatorSpec;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
-import org.apache.samza.task.TaskContext;
+import org.apache.samza.task.InitableTask;
+import org.apache.samza.task.WindowableTask;
 
 
 /**
  * This class defines the common interface for operator classes, no matter what input data are.
  *
- * <p>The basic methods an operator needs to support include:
- * <ul>
- * <li><code>init</code> via the <code>InitSystemContext</code>
- * <li><code>timeout</code> method triggered when timeout happened
- * <li><code>getSpec</code> that returns the specification object of the operator
- * </ul>
+ * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
+ * <code>init</code> and <code>window</code> for initialization and timeout operations
  *
  */
-public interface Operator {
-  /**
-   * method to initialize the operator via the <code>InitSystemContext</code>
-   *
-   * @param initContext
-   *     The init context object that provides interface to recover states from the task context
-   * @throws Exception
-   *     Throw exception if failed to initialize the store
-   */
-  void init(TaskContext context) throws Exception;
+public interface Operator extends InitableTask, WindowableTask {
 
   /**
-   * method that is to be called when timer expires
+   * Method to the specification of this <code>Operator</code>
    *
-   * @param currentSystemNano
-   *     the current system time in nano-second
-   * @param context
-   *     the <code>RuntimeSystemContext</code> object that allows the operator to send their output to
-   * @throws Exception
-   *     Throws exception if failed
-   */
-  void timeout(long currentSystemNano, RuntimeSystemContext context) throws Exception;
-
-  /**
-   * method to the specification of this <code>Operator</code>
-   *
-   * @return
-   *     The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
+   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
    */
   OperatorSpec getSpec();
 

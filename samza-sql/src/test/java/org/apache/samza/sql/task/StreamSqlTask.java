@@ -24,12 +24,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.samza.config.Config;
-import org.apache.samza.sql.api.data.IncomingMessageTuple;
+import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
 import org.apache.samza.sql.api.task.RuntimeSystemContext;
-import org.apache.samza.sql.data.SystemInputTuple;
+import org.apache.samza.sql.data.IncomingMessageTuple;
 import org.apache.samza.sql.operators.factory.SimpleOperatorFactoryImpl;
 import org.apache.samza.sql.operators.partition.PartitionOp;
 import org.apache.samza.sql.operators.partition.PartitionSpec;
@@ -66,28 +66,27 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
 
   private OperatorRoutingContext rteCntx;
 
-  @SuppressWarnings("unchecked")
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, this.rteCntx);
+    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
 
-    IncomingMessageTuple ituple = new SystemInputTuple(envelope);
-    for (Iterator<TupleOperator> iter = this.rteCntx.getSystemInputOps().iterator(ituple.getStreamName()); iter
+    IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
+    for (Iterator<TupleOperator> iter = this.rteCntx.getTupleOperators(ituple.getStreamName()).iterator(); iter
         .hasNext();) {
       iter.next().process(ituple, opCntx);
     }
 
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, this.rteCntx);
+    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
 
-    long currNano = System.nanoTime();
-    for (Iterator<Operator> iter = this.rteCntx.getSystemInputOps().values().iterator(); iter.hasNext();) {
-      iter.next().timeout(currNano, opCntx);
+    for (EntityName entity : this.rteCntx.getSystemInputs()) {
+      for (Iterator<Operator> iter = this.rteCntx.getNextOperators(entity).iterator(); iter.hasNext();) {
+        iter.next().window(opCntx, coordinator);
+      }
     }
 
   }
@@ -96,22 +95,35 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   public void init(Config config, TaskContext context) throws Exception {
     // create specification of all operators first
     // 1. create 2 window specifications that define 2 windows of fixed length of 10 seconds
-    WindowSpec spec1 = new WindowSpec("fixedWnd1", "inputStream1", "fixedWndOutput1", 10);
-    WindowSpec spec2 = new WindowSpec("fixedWnd2", "inputStream2", "fixedWndOutput2", 10);
+    WindowSpec spec1 =
+        new WindowSpec("fixedWnd1", EntityName.getStreamName("inputStream1"),
+            EntityName.getRelationName("fixedWndOutput1"), 10);
+    WindowSpec spec2 =
+        new WindowSpec("fixedWnd2", EntityName.getStreamName("inputStream2"),
+            EntityName.getRelationName("fixedWndOutput2"), 10);
     // 2. create a join specification that join the output from 2 window operators together
-    List<String> inputRelations = new ArrayList<String>();
-    inputRelations.add(spec1.getOutputName());
-    inputRelations.add(spec2.getOutputName());
-    List<String> joinKeys = new ArrayList<String>();
-    joinKeys.add("key1");
-    joinKeys.add("key2");
-    JoinSpec joinSpec = new JoinSpec("joinOp", inputRelations, "joinOutput", joinKeys);
+    @SuppressWarnings("serial")
+    List<EntityName> inputRelations = new ArrayList<EntityName>() {
+      {
+        add(spec1.getOutputName());
+        add(spec2.getOutputName());
+      }
+    };
+    @SuppressWarnings("serial")
+    List<String> joinKeys = new ArrayList<String>() {
+      {
+        add("key1");
+        add("key2");
+      }
+    };
+    JoinSpec joinSpec = new JoinSpec("joinOp", inputRelations, EntityName.getRelationName("joinOutput"), joinKeys);
     // 3. create the specification of an istream operator that convert the output from join to a stream
-    InsertStreamSpec istrmSpec = new InsertStreamSpec("istremOp", joinSpec.getOutputName(), "istrmOutput1");
+    InsertStreamSpec istrmSpec =
+        new InsertStreamSpec("istremOp", joinSpec.getOutputName(), EntityName.getStreamName("istrmOutput1"));
     // 4. create the specification of a partition operator that re-partitions the stream based on <code>joinKey</code>
     PartitionSpec parSpec =
-        new PartitionSpec("parOp1", istrmSpec.getOutputName(), new SystemStream("kafka", "parOutputStrm1"), "joinKey",
-            50);
+        new PartitionSpec("parOp1", istrmSpec.getOutputName().getName(), new SystemStream("kafka", "parOutputStrm1"),
+            "joinKey", 50);
 
     // create all operators via the operator factory
     // 1. create two window operators
@@ -128,18 +140,21 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     // Now, connecting the operators via the routing context
     this.rteCntx = new SimpleRoutingContext();
     // 1. set two system input operators (i.e. two window operators)
-    this.rteCntx.setSystemInputOperator(wnd1);
-    this.rteCntx.setSystemInputOperator(wnd2);
+    this.rteCntx.addTupleOperator(spec1.getInputName(), wnd1);
+    this.rteCntx.addTupleOperator(spec2.getInputName(), wnd2);
     // 2. connect join operator to both window operators
-    this.rteCntx.setNextRelationOperator(wnd1.getSpec().getId(), join);
-    this.rteCntx.setNextRelationOperator(wnd2.getSpec().getId(), join);
+    this.rteCntx.addRelationOperator(spec1.getOutputName(), join);
+    this.rteCntx.addRelationOperator(spec2.getOutputName(), join);
     // 3. connect stream operator to the join operator
-    this.rteCntx.setNextRelationOperator(join.getSpec().getId(), istream);
+    this.rteCntx.addRelationOperator(joinSpec.getOutputName(), istream);
     // 4. connect re-partition operator to the stream operator
-    this.rteCntx.setNextTupleOperator(istream.getSpec().getId(), par);
+    this.rteCntx.addTupleOperator(istrmSpec.getOutputName(), par);
+    // 5. set the system inputs
+    this.rteCntx.addSystemInput(spec1.getInputName());
+    this.rteCntx.addSystemInput(spec2.getInputName());
 
     for (Iterator<Operator> iter = this.rteCntx.iterator(); iter.hasNext();) {
-      iter.next().init(context);
+      iter.next().init(config, context);
     }
   }
 }

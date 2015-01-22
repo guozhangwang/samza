@@ -26,46 +26,41 @@ package org.apache.samza.sql.api.data;
  *
  */
 public interface Tuple {
+
   /**
    * Access method to get the corresponding message body in the tuple
    *
-   * @return
-   *     message object in the tuple
+   * @return Message object in the tuple
    */
   Object getMessage();
 
   /**
    * Method to indicate whether the tuple is a delete tuple or an insert tuple
    *
-   * @return
-   *     a boolean value indicates whether the current tuple is a delete or insert message
+   * @return A boolean value indicates whether the current tuple is a delete or insert message
    */
   boolean isDelete();
 
   /**
    * Access method to a field value by name
    *
-   * @param name
-   *     The field name to get the value from
-   * @return
-   *     The field object corresponding to the name
+   * @param name The field name to get the value from
+   * @return The field object corresponding to the name
    */
   Object getField(String name);
 
   /**
    * Access method to the key of the tuple
    *
-   * @return
-   *     The <code>key</code> of the tuple
+   * @return The <code>key</code> of the tuple
    */
   Object getKey();
 
   /**
    * Get the stream name of the tuple. Note this stream name should be unique in the system.
    *
-   * @return
-   *     the stream name which this tuple belongs to
+   * @return The stream name which this tuple belongs to
    */
-  String getStreamName();
+  EntityName getStreamName();
 
 }
