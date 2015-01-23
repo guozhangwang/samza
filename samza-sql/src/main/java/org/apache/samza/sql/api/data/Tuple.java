@@ -48,6 +48,11 @@ public interface Tuple {
    */
   EntityName getStreamName();
 
+  /**
+   * Method to get the key of the tuple
+   *
+   * @return The value of the key of the tuple
+   */
   public Data getKey();
 
 }
