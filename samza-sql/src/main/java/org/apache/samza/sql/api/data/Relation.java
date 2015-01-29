@@ -25,7 +25,7 @@ import org.apache.samza.storage.kv.KeyValueStore;
 /**
  * This class defines the general interface of <code>Relation</code>, which is defined as a map of <code>Tuple</code>.
  *
- * <p>The interface is defined as an extension to <code>KeyValueStore<Object, Tuple></code>.
+ * <p>The interface is defined as an extension to <code>KeyValueStore&lt;Object, Tuple&gt;</code>.
  *
  */
 

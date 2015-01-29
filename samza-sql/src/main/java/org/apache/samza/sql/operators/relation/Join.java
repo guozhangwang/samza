@@ -72,7 +72,7 @@ public class Join extends SimpleOperator implements RelationOperator {
    *     The order of the <code>joinKeys</code> MUST be the same as their corresponding relation names in <code>joinIns</code>
    */
   @SuppressWarnings("serial")
-  public Join(String id, List<String> joinIns, String joinOut, List<String> joinKeys) {
+  public Join(final String id, final List<String> joinIns, final String joinOut, final List<String> joinKeys) {
     super(new JoinSpec(id, new ArrayList<EntityName>() {
       {
         for (String name : joinIns) {

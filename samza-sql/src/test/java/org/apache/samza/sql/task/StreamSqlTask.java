@@ -95,10 +95,10 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   public void init(Config config, TaskContext context) throws Exception {
     // create specification of all operators first
     // 1. create 2 window specifications that define 2 windows of fixed length of 10 seconds
-    WindowSpec spec1 =
+    final WindowSpec spec1 =
         new WindowSpec("fixedWnd1", EntityName.getStreamName("inputStream1"),
             EntityName.getRelationName("fixedWndOutput1"), 10);
-    WindowSpec spec2 =
+    final WindowSpec spec2 =
         new WindowSpec("fixedWnd2", EntityName.getStreamName("inputStream2"),
             EntityName.getRelationName("fixedWndOutput2"), 10);
     // 2. create a join specification that join the output from 2 window operators together

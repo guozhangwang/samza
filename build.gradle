@@ -252,10 +252,10 @@ project(":samza-sql_$scalaVersion") {
   dependencies {
     compile project(':samza-api')
     compile project(":samza-core_$scalaVersion")
+    compile project(":samza-kv_$scalaVersion")
     compile "commons-collections:commons-collections:$commonsCollectionVersion"
     testCompile "junit:junit:$junitVersion"
     testCompile "org.mockito:mockito-all:$mockitoVersion"
-    testCompile project(":samza-kv_$scalaVersion")
   }
 
   test {
