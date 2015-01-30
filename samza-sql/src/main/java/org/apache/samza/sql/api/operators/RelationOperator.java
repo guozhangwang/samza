@@ -20,7 +20,7 @@
 package org.apache.samza.sql.api.operators;
 
 import org.apache.samza.sql.api.data.Relation;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
@@ -46,6 +46,6 @@ public interface RelationOperator extends Operator {
    * @param context The runtime context object that accepts outputs from the operator
    * @throws Exception Throws exception if failed
    */
-  void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception;
+  void process(Relation deltaRelation, SqlMessageCollector collector) throws Exception;
 
 }

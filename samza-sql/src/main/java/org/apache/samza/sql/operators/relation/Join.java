@@ -26,11 +26,11 @@ import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
+import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
@@ -121,19 +121,19 @@ public class Join extends SimpleOperator implements RelationOperator {
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    RuntimeSystemContext context = (RuntimeSystemContext) collector;
+    SqlMessageCollector sqlCollector = (SqlMessageCollector) collector;
     if (hasPendingChanges()) {
-      context.send(getPendingChanges());
+      sqlCollector.send(getPendingChanges());
     }
-    context.timeout(this.spec.getOutputNames());
+    sqlCollector.timeout(this.spec.getOutputNames());
   }
 
   @Override
-  public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception {
+  public void process(Relation deltaRelation, SqlMessageCollector collector) throws Exception {
     // calculate join based on the input <code>deltaRelation</code>
     join(deltaRelation);
     if (hasOutputChanges()) {
-      context.send(getOutputChanges());
+      collector.send(getOutputChanges());
     }
   }
 }

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.samza.sql.task;
+package org.apache.samza.task.sql;
 
 import java.util.List;
 
@@ -27,24 +27,23 @@ import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.sql.api.router.OperatorRouter;
 import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskCoordinator;
 
 
 /**
- * Example implementation of a runtime context that uses <code>OperatorRoutingContext</code>
+ * Example implementation of a runtime context that uses <code>OperatorRouter</code>
  *
  */
-public class RoutableRuntimeContext implements RuntimeSystemContext {
+public class OperatorMessageCollector implements SqlMessageCollector {
 
   private final MessageCollector collector;
   private final TaskCoordinator coordinator;
-  private final OperatorRoutingContext rteCntx;
+  private final OperatorRouter rteCntx;
 
-  public RoutableRuntimeContext(MessageCollector collector, TaskCoordinator coordinator, OperatorRoutingContext rteCntx) {
+  public OperatorMessageCollector(MessageCollector collector, TaskCoordinator coordinator, OperatorRouter rteCntx) {
     this.collector = collector;
     this.coordinator = coordinator;
     this.rteCntx = rteCntx;

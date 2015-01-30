@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.samza.sql.task;
+package org.apache.samza.task.sql;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.storage.kv.KeyValueStore;
 import org.apache.samza.system.OutgoingMessageEnvelope;
 
@@ -34,11 +33,11 @@ import org.apache.samza.system.OutgoingMessageEnvelope;
  * Example implementation of runtime context that stores outputs from the operators
  *
  */
-public class StoredRuntimeContext implements RuntimeSystemContext {
+public class StoreMessageCollector implements SqlMessageCollector {
 
   private final KeyValueStore<EntityName, List<Object>> outputStore;
 
-  public StoredRuntimeContext(KeyValueStore<EntityName, List<Object>> store) {
+  public StoreMessageCollector(KeyValueStore<EntityName, List<Object>> store) {
     this.outputStore = store;
   }
 

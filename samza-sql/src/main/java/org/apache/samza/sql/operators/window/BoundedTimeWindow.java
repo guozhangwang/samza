@@ -27,12 +27,12 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
+import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
@@ -82,17 +82,17 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
   }
 
   @Override
-  public void process(Tuple tuple, RuntimeSystemContext context) throws Exception {
+  public void process(Tuple tuple, SqlMessageCollector collector) throws Exception {
     // for each tuple, this will evaluate the incoming tuple and update the window states.
     // If the window states allow generating output, calculate the delta changes in
     // the window relation and execute the relation operation <code>nextOp</code>
     updateWindow(tuple);
-    processWindowChanges(context);
+    processWindowChanges(collector);
   }
 
-  private void processWindowChanges(RuntimeSystemContext context) throws Exception {
+  private void processWindowChanges(SqlMessageCollector collector) throws Exception {
     if (windowStateChange()) {
-      context.send(getWindowChanges());
+      collector.send(getWindowChanges());
     }
   }
 
@@ -120,10 +120,10 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    RuntimeSystemContext context = (RuntimeSystemContext) collector;
+    SqlMessageCollector sqlCollector = (SqlMessageCollector) collector;
     updateWindowTimeout();
-    processWindowChanges(context);
-    context.timeout(this.spec.getOutputNames());
+    processWindowChanges(sqlCollector);
+    sqlCollector.timeout(this.spec.getOutputNames());
   }
 
   @Override
@@ -134,7 +134,7 @@ public class BoundedTimeWindow extends SimpleOperator implements TupleOperator {
       Relation wndStates = (Relation) context.getStore(this.spec.getWndStatesName());
       this.windowStates = new ArrayList<WindowState>();
       for (KeyValueIterator<Object, Tuple> iter = wndStates.all(); iter.hasNext();) {
-        this.windowStates.add((WindowState) iter.next().getValue().getField("WindowState"));
+        this.windowStates.add((WindowState) iter.next().getValue().getMessage());
       }
     }
   }

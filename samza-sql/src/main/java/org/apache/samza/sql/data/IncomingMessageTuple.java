@@ -62,12 +62,6 @@ public class IncomingMessageTuple implements Tuple {
   }
 
   @Override
-  public Object getField(String name) {
-    // TODO: get field should be implemented as part of the schema / data Serde
-    return null;
-  }
-
-  @Override
   public Object getKey() {
     return imsg.getKey();
   }

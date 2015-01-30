@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.task;
+package org.apache.samza.task.sql;
 
 import java.util.List;
 
@@ -29,10 +29,10 @@ import org.apache.samza.task.MessageCollector;
 
 /**
  * This class defines the interface class to be used by the operators to send their output via runtime system resources,
- * s.t. the output system streams, the system storage, or <code>OperatorRoutingContext</code>.
+ * s.t. the output system streams, the system storage, or <code>OperatorRouter</code>.
  *
  */
-public interface RuntimeSystemContext extends MessageCollector {
+public interface SqlMessageCollector extends MessageCollector {
 
   /**
    * This method allows the current operator send its relation output to next
@@ -51,7 +51,7 @@ public interface RuntimeSystemContext extends MessageCollector {
   void send(Tuple tuple) throws Exception;
 
   /**
-   * This method allows the current operator triggers timeout actions via the <code>RuntimeSystemContext</code>.
+   * This method allows the current operator triggers timeout actions via the <code>SqlMessageCollector</code>.
    *
    * <p>This method sets timeout events to the corresponding <code>outputEntities</code> s.t. the next operators
    * attached to those entities will be notified of the timeout.

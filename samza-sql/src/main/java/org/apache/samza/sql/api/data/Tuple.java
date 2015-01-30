@@ -42,14 +42,6 @@ public interface Tuple {
   boolean isDelete();
 
   /**
-   * Access method to a field value by name
-   *
-   * @param name The field name to get the value from
-   * @return The field object corresponding to the name
-   */
-  Object getField(String name);
-
-  /**
    * Access method to the key of the tuple
    *
    * @return The <code>key</code> of the tuple

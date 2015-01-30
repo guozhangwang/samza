@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.samza.sql.task;
+package org.apache.samza.task.sql;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,19 +27,18 @@ import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.sql.api.router.OperatorRouter;
 import org.apache.samza.sql.data.IncomingMessageTuple;
 import org.apache.samza.sql.operators.factory.SimpleOperatorFactoryImpl;
 import org.apache.samza.sql.operators.partition.PartitionOp;
 import org.apache.samza.sql.operators.partition.PartitionSpec;
 import org.apache.samza.sql.operators.relation.Join;
 import org.apache.samza.sql.operators.relation.JoinSpec;
-import org.apache.samza.sql.operators.routing.SimpleRoutingContext;
 import org.apache.samza.sql.operators.stream.InsertStream;
 import org.apache.samza.sql.operators.stream.InsertStreamSpec;
 import org.apache.samza.sql.operators.window.BoundedTimeWindow;
 import org.apache.samza.sql.operators.window.WindowSpec;
+import org.apache.samza.sql.router.SimpleRouter;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
 import org.apache.samza.task.InitableTask;
@@ -59,17 +58,17 @@ import org.apache.samza.task.WindowableTask;
  * <li>d. a partition operator that re-partitions the output stream from istream and send the stream to system output
  * </ul>
  *
- * This example also uses an implementation of <code>RuntimeSystemContext</code> (@see <code>RoutableRuntimeContext</code>)
- * that uses <code>OperatorRoutingContext</code> to automatically execute the whole paths that connects operators together.
+ * This example also uses an implementation of <code>SqlMessageCollector</code> (@see <code>OperatorMessageCollector</code>)
+ * that uses <code>OperatorRouter</code> to automatically execute the whole paths that connects operators together.
  */
 public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
 
-  private OperatorRoutingContext rteCntx;
+  private OperatorRouter rteCntx;
 
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
+    SqlMessageCollector opCntx = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
 
     IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
     for (Iterator<TupleOperator> iter = this.rteCntx.getTupleOperators(ituple.getStreamName()).iterator(); iter
@@ -81,7 +80,7 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    RuntimeSystemContext opCntx = new RoutableRuntimeContext(collector, coordinator, this.rteCntx);
+    SqlMessageCollector opCntx = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
 
     for (EntityName entity : this.rteCntx.getSystemInputs()) {
       for (Iterator<Operator> iter = this.rteCntx.getNextOperators(entity).iterator(); iter.hasNext();) {
@@ -138,7 +137,7 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     PartitionOp par = (PartitionOp) operatorFactory.getTupleOperator(parSpec);
 
     // Now, connecting the operators via the routing context
-    this.rteCntx = new SimpleRoutingContext();
+    this.rteCntx = new SimpleRouter();
     // 1. set two system input operators (i.e. two window operators)
     this.rteCntx.addTupleOperator(spec1.getInputName(), wnd1);
     this.rteCntx.addTupleOperator(spec2.getInputName(), wnd2);

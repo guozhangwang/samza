@@ -24,12 +24,12 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
+import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
@@ -72,12 +72,12 @@ public class InsertStream extends SimpleOperator implements RelationOperator {
   }
 
   @Override
-  public void process(Relation deltaRelation, RuntimeSystemContext context) throws Exception {
+  public void process(Relation deltaRelation, SqlMessageCollector collector) throws Exception {
     KeyValueIterator<Object, Tuple> iterator = deltaRelation.all();
     for (; iterator.hasNext();) {
       Tuple tuple = iterator.next().getValue();
       if (!tuple.isDelete()) {
-        context.send(tuple);
+        collector.send(tuple);
       }
     }
   }

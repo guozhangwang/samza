@@ -22,13 +22,13 @@ package org.apache.samza.sql.operators.partition;
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
 import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
+import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
@@ -75,15 +75,16 @@ public final class PartitionOp extends SimpleOperator implements TupleOperator {
   }
 
   @Override
-  public void window(MessageCollector context, TaskCoordinator coordinator) throws Exception {
+  public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // TODO Auto-generated method stub
     // NOOP or flush
   }
 
   @Override
-  public void process(Tuple tuple, RuntimeSystemContext context) throws Exception {
-    context.send(new OutgoingMessageEnvelope(PartitionOp.this.spec.getSystemStream(), tuple.getKey(), tuple
-        .getField(PartitionOp.this.spec.getParKey()), tuple.getMessage()));
+  public void process(Tuple tuple, SqlMessageCollector collector) throws Exception {
+    collector.send(new OutgoingMessageEnvelope(PartitionOp.this.spec.getSystemStream(), tuple.getKey(),
+        null /* TODO: when merge with Schema API changes, use: tuple
+             .getMessage().getFieldData(PartitionOp.this.spec.getParKey()) */, tuple.getMessage()));
   }
 
 }

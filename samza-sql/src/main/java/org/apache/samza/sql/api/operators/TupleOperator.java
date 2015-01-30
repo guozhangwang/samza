@@ -20,7 +20,7 @@
 package org.apache.samza.sql.api.operators;
 
 import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.api.task.RuntimeSystemContext;
+import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
@@ -42,6 +42,6 @@ public interface TupleOperator extends Operator {
    * @param context The runtime context that accepts outputs from the operator
    * @throws Exception Throws exception if failed
    */
-  void process(Tuple tuple, RuntimeSystemContext context) throws Exception;
+  void process(Tuple tuple, SqlMessageCollector collector) throws Exception;
 
 }

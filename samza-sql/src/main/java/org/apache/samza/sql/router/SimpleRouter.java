@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.samza.sql.operators.routing;
+package org.apache.samza.sql.router;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,14 +29,14 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.operators.routing.OperatorRoutingContext;
+import org.apache.samza.sql.api.router.OperatorRouter;
 
 
 /**
  * Example routing context implementation.
  *
  */
-public class SimpleRoutingContext implements OperatorRoutingContext {
+public class SimpleRouter implements OperatorRouter {
   /**
    * List of operators added to the routing context
    */

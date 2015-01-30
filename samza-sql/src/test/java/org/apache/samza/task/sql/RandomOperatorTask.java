@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.samza.sql.task;
+package org.apache.samza.task.sql;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +43,7 @@ import org.apache.samza.task.WindowableTask;
 
 
 /***
- * This example illustrate a SQL join operation that joins two streams together using the folowing operations:
+ * This example illustrate a SQL join operation that joins two streams together using the following operations:
  * <p>a. the two streams are each processed by a window operator to convert to relations
  * <p>b. a join operator is applied on the two relations to generate join results
  * <p>c. finally, the join results are sent out to the system output
@@ -80,7 +80,7 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
     // create the runtime context w/ the output store
-    StoredRuntimeContext context = new StoredRuntimeContext(this.opOutputStore);
+    StoreMessageCollector context = new StoreMessageCollector(this.opOutputStore);
 
     // construct the input tuple
     IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
@@ -106,7 +106,7 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // create the runtime context w/ the output store
-    StoredRuntimeContext context = new StoredRuntimeContext(this.opOutputStore);
+    StoreMessageCollector context = new StoreMessageCollector(this.opOutputStore);
 
     // trigger timeout event on both window operators
     this.wndOp1.window(context, coordinator);
