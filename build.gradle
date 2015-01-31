@@ -260,13 +260,6 @@ project(":samza-sql_$scalaVersion") {
     testCompile "junit:junit:$junitVersion"
     testCompile "org.mockito:mockito-all:$mockitoVersion"
   }
-
-  test {
-    // Bump up the heap so we can start ZooKeeper and Kafka brokers.
-    minHeapSize = "2560m"
-    maxHeapSize = "2560m"
-    jvmArgs = ["-XX:+UseConcMarkSweepGC", "-server"]
-  }
 }
 
 project(":samza-shell") {

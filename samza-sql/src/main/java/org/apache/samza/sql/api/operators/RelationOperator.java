@@ -43,7 +43,7 @@ public interface RelationOperator extends Operator {
    * The <code>context</code> object is used by the operator to send their output to
    *
    * @param deltaRelation The changed rows in the input relation, including the inserts/deletes/updates
-   * @param context The runtime context object that accepts outputs from the operator
+   * @param collector The <code>SqlMessageCollector</code> object that accepts outputs from the operator
    * @throws Exception Throws exception if failed
    */
   void process(Relation deltaRelation, SqlMessageCollector collector) throws Exception;
