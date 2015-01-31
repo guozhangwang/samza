@@ -46,7 +46,7 @@ import org.apache.samza.sql.api.operators.TupleOperator;
  * <li>i)   add operators to an <code>EntityName</code>
  * <li>ii)  get the next operators attached to an <code>EntityName</code>
  * <li>iii) add and get the system input <code>EntityName</code>s
- * <li>iv)  iterate through each and every operator connected in the routing context
+ * <li>iv)  iterate through each and every operator connected via <code>OperatorRouter</code>
  * </ul>
  *
  */
@@ -97,7 +97,7 @@ public interface OperatorRouter {
   /**
    * This method provides an iterator to go through all operators connected via <code>OperatorRouter</code>
    *
-   * @return An <code>Iterator</code> for all operators connected in the routing context
+   * @return An <code>Iterator</code> for all operators connected via <code>OperatorRouter</code>
    */
   Iterator<Operator> iterator();
 

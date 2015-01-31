@@ -79,16 +79,16 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    // create the runtime context w/ the output store
-    StoreMessageCollector context = new StoreMessageCollector(this.opOutputStore);
+    // create the StoreMessageCollector
+    StoreMessageCollector sqlCollector = new StoreMessageCollector(this.opOutputStore);
 
     // construct the input tuple
     IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
 
     // based on tuple's stream name, get the window op and run process()
     BoundedTimeWindow wndOp = getWindowOp(ituple.getStreamName());
-    wndOp.process(ituple, context);
-    List<Object> wndOutputs = context.removeOutput(wndOp.getSpec().getOutputNames().get(0));
+    wndOp.process(ituple, sqlCollector);
+    List<Object> wndOutputs = sqlCollector.removeOutput(wndOp.getSpec().getOutputNames().get(0));
     if (wndOutputs.isEmpty()) {
       return;
     }
@@ -96,34 +96,34 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     // process all output from the window operator
     for (Object input : wndOutputs) {
       Relation relation = (Relation) input;
-      this.joinOp.process(relation, context);
+      this.joinOp.process(relation, sqlCollector);
     }
     // get the output from the join operator and send them
-    processJoinOutput(context.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
+    processJoinOutput(sqlCollector.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
 
   }
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    // create the runtime context w/ the output store
-    StoreMessageCollector context = new StoreMessageCollector(this.opOutputStore);
+    // create the StoreMessageCollector
+    StoreMessageCollector sqlCollector = new StoreMessageCollector(this.opOutputStore);
 
     // trigger timeout event on both window operators
-    this.wndOp1.window(context, coordinator);
-    this.wndOp2.window(context, coordinator);
+    this.wndOp1.window(sqlCollector, coordinator);
+    this.wndOp2.window(sqlCollector, coordinator);
 
     // for all outputs from the window operators, call joinOp.process()
-    for (Object input : context.removeOutput(this.wndOp1.getSpec().getOutputNames().get(0))) {
+    for (Object input : sqlCollector.removeOutput(this.wndOp1.getSpec().getOutputNames().get(0))) {
       Relation relation = (Relation) input;
-      this.joinOp.process(relation, context);
+      this.joinOp.process(relation, sqlCollector);
     }
-    for (Object input : context.removeOutput(this.wndOp2.getSpec().getOutputNames().get(0))) {
+    for (Object input : sqlCollector.removeOutput(this.wndOp2.getSpec().getOutputNames().get(0))) {
       Relation relation = (Relation) input;
-      this.joinOp.process(relation, context);
+      this.joinOp.process(relation, sqlCollector);
     }
 
     // get the output from the join operator and send them
-    processJoinOutput(context.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
+    processJoinOutput(sqlCollector.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
   }
 
   @SuppressWarnings("unchecked")

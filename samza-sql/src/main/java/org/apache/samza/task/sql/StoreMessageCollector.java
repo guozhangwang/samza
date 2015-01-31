@@ -30,7 +30,7 @@ import org.apache.samza.system.OutgoingMessageEnvelope;
 
 
 /**
- * Example implementation of runtime context that stores outputs from the operators
+ * Example implementation of <code>SqlMessageCollector</code> that stores outputs from the operators
  *
  */
 public class StoreMessageCollector implements SqlMessageCollector {

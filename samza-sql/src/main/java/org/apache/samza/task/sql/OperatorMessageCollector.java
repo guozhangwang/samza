@@ -34,7 +34,7 @@ import org.apache.samza.task.TaskCoordinator;
 
 
 /**
- * Example implementation of a runtime context that uses <code>OperatorRouter</code>
+ * Example implementation of a <code>SqlMessageCollector</code> that uses <code>OperatorRouter</code>
  *
  */
 public class OperatorMessageCollector implements SqlMessageCollector {

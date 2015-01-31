@@ -33,12 +33,12 @@ import org.apache.samza.sql.api.router.OperatorRouter;
 
 
 /**
- * Example routing context implementation.
+ * Example implementation of <code>OperatorRouter</code>
  *
  */
 public class SimpleRouter implements OperatorRouter {
   /**
-   * List of operators added to the routing context
+   * List of operators added to the <code>OperatorRouter</code>
    */
   private List<Operator> operators = new ArrayList<Operator>();
 

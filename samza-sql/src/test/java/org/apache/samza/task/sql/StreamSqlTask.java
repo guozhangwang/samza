@@ -68,23 +68,23 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    SqlMessageCollector opCntx = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
+    SqlMessageCollector opCollector = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
 
     IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
     for (Iterator<TupleOperator> iter = this.rteCntx.getTupleOperators(ituple.getStreamName()).iterator(); iter
         .hasNext();) {
-      iter.next().process(ituple, opCntx);
+      iter.next().process(ituple, opCollector);
     }
 
   }
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    SqlMessageCollector opCntx = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
+    SqlMessageCollector opCollector = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
 
     for (EntityName entity : this.rteCntx.getSystemInputs()) {
       for (Iterator<Operator> iter = this.rteCntx.getNextOperators(entity).iterator(); iter.hasNext();) {
-        iter.next().window(opCntx, coordinator);
+        iter.next().window(opCollector, coordinator);
       }
     }
 
@@ -136,7 +136,7 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     // 4. create a re-partition operator
     PartitionOp par = (PartitionOp) operatorFactory.getTupleOperator(parSpec);
 
-    // Now, connecting the operators via the routing context
+    // Now, connecting the operators via the OperatorRouter
     this.rteCntx = new SimpleRouter();
     // 1. set two system input operators (i.e. two window operators)
     this.rteCntx.addTupleOperator(spec1.getInputName(), wnd1);
