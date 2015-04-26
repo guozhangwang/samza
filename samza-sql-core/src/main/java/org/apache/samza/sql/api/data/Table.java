@@ -17,28 +17,20 @@
  * under the License.
  */
 
-package org.apache.samza.sql.operators.window;
+package org.apache.samza.sql.api.data;
 
-public class WindowState {
-  public String startOffset = null;
-  public String endOffset = null;
-  public boolean isClosed = false;
+/**
+ * This interface defines a non-ordered {@link org.apache.samza.sql.api.data.Relation}, which has a unique primary key
+ *
+ * @param <K> The primary key for the {@code Table} class
+ */
+public interface Table<K> extends Relation<K> {
 
-  public void open(String offset) {
-    this.isClosed = false;
-    this.startOffset = offset;
-  }
+  /**
+   * Get the primary key field name for this table
+   *
+   * @return The name of the primary key field
+   */
+  String getPrimaryKey();
 
-  public void close(String offset) {
-    this.endOffset = offset;
-    this.isClosed = true;
-  }
-
-  public void advanceTo(String offset) {
-    this.endOffset = offset;
-  }
-
-  public boolean isClosed() {
-    return this.isClosed;
-  }
 }

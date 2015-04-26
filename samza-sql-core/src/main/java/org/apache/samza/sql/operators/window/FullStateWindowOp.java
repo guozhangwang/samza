@@ -17,26 +17,29 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.operators;
+package org.apache.samza.sql.operators.window;
 
-import org.apache.samza.task.InitableTask;
-import org.apache.samza.task.WindowableTask;
+import org.apache.samza.config.Config;
+import org.apache.samza.sql.window.storage.MessageStore;
+import org.apache.samza.task.TaskContext;
 
 
 /**
- * This class defines the common interface for operator classes, no matter what input data are.
- *
- * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
- * <code>init</code> and <code>window</code> for initialization and timeout operations
- *
+ * This abstract class defines the base class for all window operators that include a full {@code messageStore}
  */
-public interface Operator extends InitableTask, WindowableTask {
+public abstract class FullStateWindowOp extends WindowOp {
 
-  /**
-   * Method to the specification of this <code>Operator</code>
-   *
-   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
-   */
-  OperatorSpec getSpec();
+  protected MessageStore messageStore;
+
+  FullStateWindowOp(WindowOpSpec spec) {
+    super(spec);
+    // TODO Auto-generated constructor stub
+  }
+
+  @Override
+  public void init(Config config, TaskContext context) throws Exception {
+    super.init(config, context);
+    this.messageStore = (MessageStore) context.getStore("wnd-msg-" + this.wndId);
+  }
 
 }

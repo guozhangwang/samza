@@ -19,18 +19,18 @@
 
 package org.apache.samza.sql.operators.factory;
 
+import org.apache.samza.sql.api.operators.OperatorSpec;
 import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.operators.SqlOperatorFactory;
 import org.apache.samza.sql.api.operators.TupleOperator;
-import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 import org.apache.samza.sql.operators.partition.PartitionOp;
 import org.apache.samza.sql.operators.partition.PartitionSpec;
 import org.apache.samza.sql.operators.relation.Join;
 import org.apache.samza.sql.operators.relation.JoinSpec;
 import org.apache.samza.sql.operators.stream.InsertStream;
 import org.apache.samza.sql.operators.stream.InsertStreamSpec;
-import org.apache.samza.sql.operators.window.BoundedTimeWindow;
-import org.apache.samza.sql.operators.window.WindowSpec;
+import org.apache.samza.sql.operators.window.FullStateTimeWindowAutoOp;
+import org.apache.samza.sql.operators.window.WindowOpSpec;
 
 
 /**
@@ -52,8 +52,8 @@ public class SimpleOperatorFactoryImpl implements SqlOperatorFactory {
 
   @Override
   public TupleOperator getTupleOperator(OperatorSpec spec) {
-    if (spec instanceof WindowSpec) {
-      return new BoundedTimeWindow((WindowSpec) spec);
+    if (spec instanceof WindowOpSpec) {
+      return new FullStateTimeWindowAutoOp((WindowOpSpec) spec);
     } else if (spec instanceof PartitionSpec) {
       return new PartitionOp((PartitionSpec) spec);
     }

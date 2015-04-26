@@ -20,7 +20,7 @@
 package org.apache.samza.sql.operators.stream;
 
 import org.apache.samza.sql.api.data.EntityName;
-import org.apache.samza.sql.api.operators.spec.OperatorSpec;
+import org.apache.samza.sql.api.operators.OperatorSpec;
 import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 

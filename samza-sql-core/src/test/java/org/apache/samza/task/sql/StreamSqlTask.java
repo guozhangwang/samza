@@ -36,8 +36,8 @@ import org.apache.samza.sql.operators.relation.Join;
 import org.apache.samza.sql.operators.relation.JoinSpec;
 import org.apache.samza.sql.operators.stream.InsertStream;
 import org.apache.samza.sql.operators.stream.InsertStreamSpec;
-import org.apache.samza.sql.operators.window.BoundedTimeWindow;
-import org.apache.samza.sql.operators.window.WindowSpec;
+import org.apache.samza.sql.operators.window.FullStateTimeWindowAutoOp;
+import org.apache.samza.sql.operators.window.WindowOpSpec;
 import org.apache.samza.sql.router.SimpleRouter;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
@@ -71,7 +71,7 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     SqlMessageCollector opCollector = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
 
     IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
-    for (Iterator<TupleOperator> iter = this.rteCntx.getTupleOperators(ituple.getStreamName()).iterator(); iter
+    for (Iterator<TupleOperator> iter = this.rteCntx.getTupleOperators(ituple.getEntityName()).iterator(); iter
         .hasNext();) {
       iter.next().process(ituple, opCollector);
     }
@@ -94,11 +94,11 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   public void init(Config config, TaskContext context) throws Exception {
     // create specification of all operators first
     // 1. create 2 window specifications that define 2 windows of fixed length of 10 seconds
-    final WindowSpec spec1 =
-        new WindowSpec("fixedWnd1", EntityName.getStreamName("inputStream1"),
+    final WindowOpSpec spec1 =
+        new WindowOpSpec("fixedWnd1", EntityName.getStreamName("inputStream1"),
             EntityName.getRelationName("fixedWndOutput1"), 10);
-    final WindowSpec spec2 =
-        new WindowSpec("fixedWnd2", EntityName.getStreamName("inputStream2"),
+    final WindowOpSpec spec2 =
+        new WindowOpSpec("fixedWnd2", EntityName.getStreamName("inputStream2"),
             EntityName.getRelationName("fixedWndOutput2"), 10);
     // 2. create a join specification that join the output from 2 window operators together
     @SuppressWarnings("serial")
@@ -127,8 +127,8 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     // create all operators via the operator factory
     // 1. create two window operators
     SimpleOperatorFactoryImpl operatorFactory = new SimpleOperatorFactoryImpl();
-    BoundedTimeWindow wnd1 = (BoundedTimeWindow) operatorFactory.getTupleOperator(spec1);
-    BoundedTimeWindow wnd2 = (BoundedTimeWindow) operatorFactory.getTupleOperator(spec2);
+    FullStateTimeWindowAutoOp wnd1 = (FullStateTimeWindowAutoOp) operatorFactory.getTupleOperator(spec1);
+    FullStateTimeWindowAutoOp wnd2 = (FullStateTimeWindowAutoOp) operatorFactory.getTupleOperator(spec2);
     // 2. create one join operator
     Join join = (Join) operatorFactory.getRelationOperator(joinSpec);
     // 3. create one stream operator

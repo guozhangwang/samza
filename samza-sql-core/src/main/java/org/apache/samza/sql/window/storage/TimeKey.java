@@ -17,26 +17,30 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.operators;
-
-import org.apache.samza.task.InitableTask;
-import org.apache.samza.task.WindowableTask;
-
+package org.apache.samza.sql.window.storage;
 
 /**
- * This class defines the common interface for operator classes, no matter what input data are.
- *
- * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
- * <code>init</code> and <code>window</code> for initialization and timeout operations
- *
+ * This class implements key that is based on time
  */
-public interface Operator extends InitableTask, WindowableTask {
+public class TimeKey extends WindowKey {
+  private final Long timeNano;
 
-  /**
-   * Method to the specification of this <code>Operator</code>
-   *
-   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
-   */
-  OperatorSpec getSpec();
+  public TimeKey(long timeNano) {
+    this.timeNano = timeNano;
+  }
+
+  @Override
+  public int compareTo(WindowKey o) {
+    if (!(o instanceof TimeKey)) {
+      throw new IllegalArgumentException("Cannot compare TimeKey to " + o.getClass().getName());
+    }
+
+    TimeKey other = (TimeKey) o;
+    return this.timeNano.compareTo(other.timeNano);
+  }
+
+  public long getTimeNano() {
+    return this.timeNano;
+  }
 
 }

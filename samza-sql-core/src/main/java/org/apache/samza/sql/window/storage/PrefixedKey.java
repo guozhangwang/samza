@@ -17,26 +17,38 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.operators;
-
-import org.apache.samza.task.InitableTask;
-import org.apache.samza.task.WindowableTask;
-
+package org.apache.samza.sql.window.storage;
 
 /**
- * This class defines the common interface for operator classes, no matter what input data are.
- *
- * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
- * <code>init</code> and <code>window</code> for initialization and timeout operations
- *
+ * This class defines a key that has a prefix string
  */
-public interface Operator extends InitableTask, WindowableTask {
+public class PrefixedKey extends WindowKey {
+  private final String prefix;
+  private final WindowKey key;
 
-  /**
-   * Method to the specification of this <code>Operator</code>
-   *
-   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
-   */
-  OperatorSpec getSpec();
+  public PrefixedKey(String prefix, WindowKey key) {
+    this.prefix = prefix;
+    this.key = key;
+  }
+
+  public WindowKey getKey() {
+    return this.key;
+  }
+
+  public String getPrefix() {
+    return this.prefix;
+  }
+
+  @Override
+  public int compareTo(WindowKey o) {
+    if (!(o instanceof PrefixedKey)) {
+      throw new IllegalArgumentException("Cannot compare PrefixedKey to " + o.getClass().getName());
+    }
+    PrefixedKey other = (PrefixedKey) o;
+    if (this.prefix.compareTo(other.prefix) != 0) {
+      return this.prefix.compareTo(other.prefix);
+    }
+    return this.key.compareTo(key);
+  }
 
 }

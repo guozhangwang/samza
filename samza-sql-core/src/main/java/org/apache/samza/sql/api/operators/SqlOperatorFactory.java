@@ -19,7 +19,6 @@
 
 package org.apache.samza.sql.api.operators;
 
-import org.apache.samza.sql.api.operators.spec.OperatorSpec;
 
 
 /**

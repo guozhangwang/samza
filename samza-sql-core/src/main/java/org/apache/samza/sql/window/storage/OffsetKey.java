@@ -17,26 +17,29 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.operators;
+package org.apache.samza.sql.window.storage;
 
-import org.apache.samza.task.InitableTask;
-import org.apache.samza.task.WindowableTask;
+import org.apache.samza.system.sql.Offset;
 
 
 /**
- * This class defines the common interface for operator classes, no matter what input data are.
- *
- * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
- * <code>init</code> and <code>window</code> for initialization and timeout operations
- *
+ * This class defines keys that are based on {@link org.apache.samza.system.sql.Offset}
  */
-public interface Operator extends InitableTask, WindowableTask {
+public class OffsetKey extends WindowKey {
+  private final Offset offset;
 
-  /**
-   * Method to the specification of this <code>Operator</code>
-   *
-   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
-   */
-  OperatorSpec getSpec();
+  public OffsetKey(Offset offset) {
+    this.offset = offset;
+  }
+
+  @Override
+  public int compareTo(WindowKey o) {
+    if (!(o instanceof OffsetKey)) {
+      throw new IllegalArgumentException("Cannot compare OffsetMessageKey with other type of keys. Other key type:"
+          + o.getClass().getName());
+    }
+    OffsetKey other = (OffsetKey) o;
+    return this.offset.compareTo(other.offset);
+  }
 
 }

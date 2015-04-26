@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.EntityName;
-import org.apache.samza.sql.api.operators.spec.OperatorSpec;
+import org.apache.samza.sql.api.operators.OperatorSpec;
 import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 

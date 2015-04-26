@@ -17,26 +17,24 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.operators;
+package org.apache.samza.sql.operators.window;
 
-import org.apache.samza.task.InitableTask;
-import org.apache.samza.task.WindowableTask;
+import java.util.List;
+
+import org.apache.samza.sql.api.data.Tuple;
+import org.apache.samza.sql.window.storage.Range;
+import org.apache.samza.sql.window.storage.WindowKey;
+import org.apache.samza.storage.kv.Entry;
+import org.apache.samza.storage.kv.KeyValueIterator;
 
 
 /**
- * This class defines the common interface for operator classes, no matter what input data are.
- *
- * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
- * <code>init</code> and <code>window</code> for initialization and timeout operations
- *
+ * This interface class defines the methods to access messages in a {@link org.apache.samza.sql.operators.window.WindowOp}
  */
-public interface Operator extends InitableTask, WindowableTask {
+public interface FullStateTimeWindow {
 
-  /**
-   * Method to the specification of this <code>Operator</code>
-   *
-   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
-   */
-  OperatorSpec getSpec();
+  KeyValueIterator<WindowKey, Tuple> getMessages(Range<Long> timeRange, List<Entry<String, Object>> filterFields);
+
+  KeyValueIterator<WindowKey, Tuple> getMessages(Range<Long> timeRange);
 
 }

@@ -27,8 +27,10 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.data.IncomingMessageTuple;
-import org.apache.samza.sql.operators.relation.Join;
-import org.apache.samza.sql.operators.window.BoundedTimeWindow;
+import org.apache.samza.sql.operators.join.StreamStreamJoin;
+import org.apache.samza.sql.operators.window.FullStateTimeWindowOp;
+import org.apache.samza.sql.window.storage.WindowKey;
+import org.apache.samza.sql.window.storage.WindowOutputStream;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.storage.kv.KeyValueStore;
 import org.apache.samza.system.IncomingMessageEnvelope;
@@ -51,11 +53,11 @@ import org.apache.samza.task.WindowableTask;
  */
 public class RandomOperatorTask implements StreamTask, InitableTask, WindowableTask {
   private KeyValueStore<EntityName, List<Object>> opOutputStore;
-  private BoundedTimeWindow wndOp1;
-  private BoundedTimeWindow wndOp2;
-  private Join joinOp;
+  private FullStateTimeWindowOp wndOp1;
+  private FullStateTimeWindowOp wndOp2;
+  private StreamStreamJoin joinOp;
 
-  private BoundedTimeWindow getWindowOp(EntityName streamName) {
+  private FullStateTimeWindowOp getWindowOp(EntityName streamName) {
     if (streamName.equals(EntityName.getStreamName("kafka:stream1"))) {
       return this.wndOp1;
     } else if (streamName.equals(EntityName.getStreamName("kafka:stream2"))) {
@@ -86,18 +88,20 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
 
     // based on tuple's stream name, get the window op and run process()
-    BoundedTimeWindow wndOp = getWindowOp(ituple.getStreamName());
-    wndOp.process(ituple, sqlCollector);
-    List<Object> wndOutputs = sqlCollector.removeOutput(wndOp.getSpec().getOutputNames().get(0));
-    if (wndOutputs.isEmpty()) {
+    FullStateTimeWindowOp wndOp = getWindowOp(ituple.getEntityName());
+    wndOp.addMessage(ituple);
+    WindowOutputStream<WindowKey> output = wndOp.getResult();
+    if (output == null) {
       return;
     }
 
+    // TODO: update the interface of the StreamStreamJoinOp s.t. it can be more intuitive to human
     // process all output from the window operator
-    for (Object input : wndOutputs) {
-      Relation relation = (Relation) input;
-      this.joinOp.process(relation, sqlCollector);
+    KeyValueIterator<WindowKey, Tuple> iter = output.all();
+    while (iter.hasNext()) {
+      this.joinOp.process(iter.next().getValue(), sqlCollector);
     }
+
     // get the output from the join operator and send them
     processJoinOutput(sqlCollector.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
 
@@ -105,33 +109,14 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    // create the StoreMessageCollector
-    StoreMessageCollector sqlCollector = new StoreMessageCollector(this.opOutputStore);
-
-    // trigger timeout event on both window operators
-    this.wndOp1.window(sqlCollector, coordinator);
-    this.wndOp2.window(sqlCollector, coordinator);
-
-    // for all outputs from the window operators, call joinOp.process()
-    for (Object input : sqlCollector.removeOutput(this.wndOp1.getSpec().getOutputNames().get(0))) {
-      Relation relation = (Relation) input;
-      this.joinOp.process(relation, sqlCollector);
-    }
-    for (Object input : sqlCollector.removeOutput(this.wndOp2.getSpec().getOutputNames().get(0))) {
-      Relation relation = (Relation) input;
-      this.joinOp.process(relation, sqlCollector);
-    }
-
-    // get the output from the join operator and send them
-    processJoinOutput(sqlCollector.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void init(Config config, TaskContext context) throws Exception {
     // 1. create a fixed length 10 sec window operator
-    this.wndOp1 = new BoundedTimeWindow("wndOp1", 10, "kafka:stream1", "relation1");
-    this.wndOp2 = new BoundedTimeWindow("wndOp2", 10, "kafka:stream2", "relation2");
+    this.wndOp1 = new FullStateTimeWindowOp("wndOp1", 10, "kafka:stream1", "relation1");
+    this.wndOp2 = new FullStateTimeWindowOp("wndOp2", 10, "kafka:stream2", "relation2");
     // 2. create a join operation
     List<String> inputRelations = new ArrayList<String>();
     inputRelations.add("relation1");
@@ -139,7 +124,7 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     List<String> joinKeys = new ArrayList<String>();
     joinKeys.add("key1");
     joinKeys.add("key2");
-    this.joinOp = new Join("joinOp", inputRelations, "joinOutput", joinKeys);
+    this.joinOp = new StreamStreamJoin("joinOp", inputRelations, "joinOutput", joinKeys);
     // Finally, initialize all operators
     this.opOutputStore =
         (KeyValueStore<EntityName, List<Object>>) context.getStore("samza-sql-operator-output-kvstore");

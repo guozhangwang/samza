@@ -58,7 +58,7 @@ public class OperatorMessageCollector implements SqlMessageCollector {
 
   @Override
   public void send(Tuple tuple) throws Exception {
-    for (TupleOperator op : this.rteCntx.getTupleOperators(tuple.getStreamName())) {
+    for (TupleOperator op : this.rteCntx.getTupleOperators(tuple.getEntityName())) {
       op.process(tuple, this);
     }
   }

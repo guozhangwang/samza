@@ -17,26 +17,11 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.operators;
-
-import org.apache.samza.task.InitableTask;
-import org.apache.samza.task.WindowableTask;
-
+package org.apache.samza.system.sql;
 
 /**
- * This class defines the common interface for operator classes, no matter what input data are.
- *
- * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
- * <code>init</code> and <code>window</code> for initialization and timeout operations
- *
+ * A generic interface extending {@link java.lang.Comparable} to be used as {@code Offset} in a stream
  */
-public interface Operator extends InitableTask, WindowableTask {
-
-  /**
-   * Method to the specification of this <code>Operator</code>
-   *
-   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
-   */
-  OperatorSpec getSpec();
+public interface Offset extends Comparable<Offset> {
 
 }

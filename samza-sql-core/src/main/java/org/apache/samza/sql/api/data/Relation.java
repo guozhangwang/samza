@@ -23,20 +23,13 @@ import org.apache.samza.storage.kv.KeyValueStore;
 
 
 /**
- * This class defines the general interface of <code>Relation</code>, which is defined as a map of <code>Tuple</code>.
+ * This class defines the general interface of <code>Relation</code>, which is a collection of <code>Tuple</code>.
  *
- * <p>The interface is defined as an extension to <code>KeyValueStore&lt;Object, Tuple&gt;</code>.
+ * <p>The interface is defined as an extension to {@link org.apache.samza.storage.kv.KeyValueStore}.
  *
  */
 
-public interface Relation extends KeyValueStore<Object, Tuple> {
-
-  /**
-   * Get the primary key field name for this table
-   *
-   * @return The name of the primary key field
-   */
-  String getPrimaryKey();
+public interface Relation<K> extends KeyValueStore<K, Tuple> {
 
   /**
    * Get the name of the relation created by CREATE TABLE

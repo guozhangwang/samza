@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.operators.spec;
+package org.apache.samza.sql.api.operators;
 
 import java.util.List;
 

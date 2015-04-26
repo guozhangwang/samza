@@ -48,7 +48,7 @@ public class StoreMessageCollector implements SqlMessageCollector {
 
   @Override
   public void send(Tuple tuple) throws Exception {
-    saveOutput(tuple.getStreamName(), tuple);
+    saveOutput(tuple.getEntityName(), tuple);
   }
 
   @Override

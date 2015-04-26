@@ -17,26 +17,22 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.operators;
+package org.apache.samza.sql.operators.join;
 
-import org.apache.samza.task.InitableTask;
-import org.apache.samza.task.WindowableTask;
+import java.util.List;
+
+import org.apache.samza.sql.api.data.EntityName;
+import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
 
 
 /**
- * This class defines the common interface for operator classes, no matter what input data are.
- *
- * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
- * <code>init</code> and <code>window</code> for initialization and timeout operations
- *
+ * This class defines the specification of a {@link org.apache.samza.sql.operators.join.StreamStreamJoin} operator
  */
-public interface Operator extends InitableTask, WindowableTask {
+public class StreamStreamJoinSpec extends SimpleOperatorSpec {
 
-  /**
-   * Method to the specification of this <code>Operator</code>
-   *
-   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
-   */
-  OperatorSpec getSpec();
+  public StreamStreamJoinSpec(String id, List<EntityName> inputs, EntityName output) {
+    super(id, inputs, output);
+    // TODO Auto-generated constructor stub
+  }
 
 }

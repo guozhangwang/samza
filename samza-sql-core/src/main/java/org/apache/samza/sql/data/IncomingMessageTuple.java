@@ -22,6 +22,8 @@ import org.apache.samza.sql.api.data.Data;
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.system.IncomingMessageEnvelope;
+import org.apache.samza.system.sql.LongOffset;
+import org.apache.samza.system.sql.Offset;
 
 
 /**
@@ -40,6 +42,11 @@ public class IncomingMessageTuple implements Tuple {
   private final EntityName strmEntity;
 
   /**
+   * The system time in nano that this message is received
+   */
+  private final Long recvTimeNano;
+
+  /**
    * Ctor to create a <code>IncomingMessageTuple</code> from <code>IncomingMessageEnvelope</code>
    *
    * @param imsg The incoming system message
@@ -49,9 +56,10 @@ public class IncomingMessageTuple implements Tuple {
     this.strmEntity =
         EntityName.getStreamName(String.format("%s:%s", imsg.getSystemStreamPartition().getSystem(), imsg
             .getSystemStreamPartition().getStream()));
+    this.recvTimeNano = System.nanoTime();
+
   }
 
-  // TODO: the return type should be changed to the generic data type
   @Override
   public Data getMessage() {
     return (Data) this.imsg.getMessage();
@@ -68,8 +76,20 @@ public class IncomingMessageTuple implements Tuple {
   }
 
   @Override
-  public EntityName getStreamName() {
+  public EntityName getEntityName() {
     return this.strmEntity;
+  }
+
+  @Override
+  public long getMessageTimeNano() {
+    return this.recvTimeNano;
+  }
+
+  @Override
+  public Offset getOffset() {
+    // TODO: need to add offset factory to generate different types of offset. This is just a placeholder,
+    // assuming incoming message carries long value as offset (i.e. Kafka case)
+    return new LongOffset(this.imsg.getOffset());
   }
 
 }
