@@ -19,11 +19,10 @@
 
 package org.apache.samza.sql.operators.window;
 
-import java.util.List;
-
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.OperatorSpec;
 import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
+import org.apache.samza.sql.window.storage.MessageStoreSpec;
 
 
 /**
@@ -31,7 +30,7 @@ import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
  */
 public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
 
-  public enum WindowSizeUnit {
+  public enum SizeUnit {
     TIME_SEC,
     TIME_MS,
     TIME_MICRO,
@@ -39,28 +38,9 @@ public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
     TUPLE
   }
 
-  public enum WindowInitBoundary {
-    HOUR,
-    MIN,
-    SEC,
-    MS,
-    MICRO,
-    DEFAULT
-  }
-
-  public enum WindowType {
+  public enum Type {
     FIXED_WND,
     SESSION_WND
-  }
-
-  public static class MessageStoreSpec {
-    public enum StoreType {
-      PREFIX_STORE,
-      OFFSET_STORE,
-      TIME_AND_OFFSET_STORE
-    }
-    public List<String> prefixFields;
-    public List<String> orderKeys;
   }
 
   /**
@@ -68,19 +48,36 @@ public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
    */
   private final int size;
 
+  /**
+   * The window advance step size
+   */
   private final int stepSize;
 
-  private final WindowSizeUnit unit;
+  /**
+   * The window size and step size unit
+   */
+  private final SizeUnit unit;
 
-  private final WindowType type;
+  /**
+   * The window type
+   */
+  private final Type type;
 
+  /**
+   * The retention policy of the window operator
+   */
   private final RetentionPolicy retention;
 
+  /**
+   * The specification for the message store in the window operator
+   */
   private final MessageStoreSpec msgStoreSpec;
 
+  /**
+   * The field in the incoming message as timestamp field
+   */
   private final String timeField;
 
-  private final WindowInitBoundary initBoundary;
   /**
    * Default ctor of the <code>WindowSpec</code> object
    *
@@ -92,8 +89,8 @@ public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
    * @param type The type of window: e.g. session window or fixed window
    * @param retention The retention policy for the window operator
    */
-  public WindowOpSpec(String id, EntityName input, EntityName output, int size, int stepSize, WindowSizeUnit unit,
-      WindowType type, RetentionPolicy retention, MessageStoreSpec msgStoreSpec, String timeField, WindowInitBoundary initBoundary) {
+  public WindowOpSpec(String id, EntityName input, EntityName output, int size, int stepSize, SizeUnit unit, Type type,
+      RetentionPolicy retention, MessageStoreSpec msgStoreSpec, String timeField) {
     super(id, input, output);
     this.size = size;
     this.retention = retention;
@@ -102,12 +99,11 @@ public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
     this.msgStoreSpec = msgStoreSpec;
     this.timeField = timeField;
     this.stepSize = stepSize;
-    this.initBoundary = initBoundary;
   }
 
-  //TODO: stub to let test code compilation pass. Need to modify to construct real window operator spec
+  //Ctor for a fixed tumbling time window in seconds w/ default retention policy, message store specs, and no timestamp field
   public WindowOpSpec(String id, EntityName input, EntityName output, int size) {
-    this(id, input, output, size, size, WindowSizeUnit.TIME_SEC, WindowType.FIXED_WND, null, null, null, null);
+    this(id, input, output, size, size, SizeUnit.TIME_SEC, Type.FIXED_WND, null, null, null);
   }
 
   /**
@@ -124,19 +120,15 @@ public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
   }
 
   public boolean isTimeWindow() {
-    return !this.unit.equals(WindowSizeUnit.TUPLE);
+    return !this.unit.equals(SizeUnit.TUPLE);
   }
 
-  public WindowSizeUnit getUnit() {
+  public SizeUnit getUnit() {
     return this.unit;
   }
 
-  public WindowInitBoundary getInitBoundary() {
-    return this.initBoundary;
-  }
-
   public boolean isSessionWindow() {
-    return this.type.equals(WindowType.SESSION_WND);
+    return this.type.equals(Type.SESSION_WND);
   }
 
   public RetentionPolicy getRetention() {

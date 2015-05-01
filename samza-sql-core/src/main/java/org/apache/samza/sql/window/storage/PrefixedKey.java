@@ -22,16 +22,16 @@ package org.apache.samza.sql.window.storage;
 /**
  * This class defines a key that has a prefix string
  */
-public class PrefixedKey extends WindowKey {
+public class PrefixedKey extends OrderedStoreKey {
   private final String prefix;
-  private final WindowKey key;
+  private final OrderedStoreKey key;
 
-  public PrefixedKey(String prefix, WindowKey key) {
+  public PrefixedKey(String prefix, OrderedStoreKey key) {
     this.prefix = prefix;
     this.key = key;
   }
 
-  public WindowKey getKey() {
+  public OrderedStoreKey getKey() {
     return this.key;
   }
 
@@ -40,7 +40,7 @@ public class PrefixedKey extends WindowKey {
   }
 
   @Override
-  public int compareTo(WindowKey o) {
+  public int compareTo(OrderedStoreKey o) {
     if (!(o instanceof PrefixedKey)) {
       throw new IllegalArgumentException("Cannot compare PrefixedKey to " + o.getClass().getName());
     }

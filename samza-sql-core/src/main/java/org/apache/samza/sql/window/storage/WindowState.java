@@ -27,22 +27,22 @@ import org.apache.samza.system.sql.Offset;
  */
 public class WindowState {
   /**
-   * The start offset of the window
+   * The start offset of the window (inclusive)
    */
   private final Offset startOffset;
 
   /**
-   * The start time of the window in nano seconds.
+   * The start time of the window in nano seconds (inclusive)
    */
   private final long stTimeNano;
 
   /**
-   * The last offset of the message received in the window
+   * The last offset of the message received in the window (inclusive)
    */
   private Offset lastOffset = null;
 
   /**
-   * The end time of the window in nano seconds.
+   * The end time of the window in nano seconds (exclusive)
    */
   private long edTimeNano = Long.MIN_VALUE;
 

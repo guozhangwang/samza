@@ -31,17 +31,17 @@ import org.apache.samza.storage.kv.KeyValueIterator;
 /**
  * This class defines the default {@code MessageStore} for {@link org.apache.samza.sql.operators.window.WindowOp}.
  */
-public class MessageStore extends WindowOutputStream<WindowKey> {
+public class MessageStore extends WindowOutputStream<OrderedStoreKey> {
 
   /**
    * Ctor for {@code MessageStore}
    *
    * @param msgStore The underlying store used for messages. It can either be in-memory or on-disk, and should not be a logged store to avoid performance issue.
-   * @param orderKeyFields The list of fields in the message fields used as ordering keys
+   * @param OrderedStoreKeyFields The list of fields in the message fields used as ordering keys (should include all prefix fields + timestamp field (optional))
    * @param strmName The stream name that uniquely identifies the message stream
    */
-  public MessageStore(Stream<WindowKey> msgStore, List<String> orderKeyFields, EntityName strmName) {
-    super(msgStore, strmName, orderKeyFields);
+  public MessageStore(Stream<OrderedStoreKey> msgStore, EntityName strmName, MessageStoreSpec spec) {
+    super(msgStore, strmName, spec);
   }
 
   /**
@@ -51,14 +51,14 @@ public class MessageStore extends WindowOutputStream<WindowKey> {
    * @param filterFields The list of filter fields and values to match
    * @return The iterator for the list of matching messages.
    */
-  public KeyValueIterator<WindowKey, Tuple> getMessages(Range<WindowKey> extRange,
+  public KeyValueIterator<OrderedStoreKey, Tuple> getMessages(Range<OrderedStoreKey> extRange,
       List<Entry<String, Object>> filterFields) {
     // returns an iterator that automatically filters entries based on the filterFields
     if (filterFields == null || filterFields.isEmpty()) {
       return this.range(extRange.getMin(), extRange.getMax());
     }
 
-    return new FilteredMessageIterator<WindowKey>(this.range(extRange.getMin(), extRange.getMax()),
+    return new FilteredMessageIterator<OrderedStoreKey>(this.range(extRange.getMin(), extRange.getMax()),
         filterFields);
   }
 
@@ -69,7 +69,7 @@ public class MessageStore extends WindowOutputStream<WindowKey> {
    * @param tuple The incoming message tuple
    * @return The actual message store key to access the tuple in this {@code MessageStore}
    */
-  public WindowKey getKey(WindowKey extKey, Tuple tuple) {
+  public OrderedStoreKey getKey(OrderedStoreKey extKey, Tuple tuple) {
     return extKey;
   }
 
@@ -78,8 +78,8 @@ public class MessageStore extends WindowOutputStream<WindowKey> {
    *
    * @param range The external key range to be cleaned up
    */
-  public void purge(Range<WindowKey> extRange) {
-    KeyValueIterator<WindowKey, Tuple> iter = this.range(extRange.getMin(), extRange.getMax());
+  public void purge(Range<OrderedStoreKey> extRange) {
+    KeyValueIterator<OrderedStoreKey, Tuple> iter = this.range(extRange.getMin(), extRange.getMax());
     while (iter.hasNext()) {
       this.delete(iter.next().getKey());
     }

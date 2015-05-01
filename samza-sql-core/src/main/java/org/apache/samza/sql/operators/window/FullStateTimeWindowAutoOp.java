@@ -48,4 +48,16 @@ public class FullStateTimeWindowAutoOp extends FullStateTimeWindowOp implements 
 
   }
 
+  //TODO: need to implement the function to push pending flush outputs to downstream operators
+  public void sendPendingOutputs(MessageCollector collector) throws Exception {
+    // 7. Send out pending windows updates
+    //    1. For each window in pending flush list, send the updates to the next operator
+    //       1. If window outputs can't be accepted, disable the message selector from delivering messages to this window operator and return
+    if (outputStream.all().hasNext()) {
+      // There are still pending output not pushed downstream yet
+      // TODO: push the output to downstream operator via OperatorRouter
+      // if failed, disable the message selector for the incoming message to this window operator
+    }
+  }
+
 }

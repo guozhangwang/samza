@@ -27,9 +27,9 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.data.IncomingMessageTuple;
-import org.apache.samza.sql.operators.join.StreamStreamJoin;
+import org.apache.samza.sql.operators.join.StreamStreamJoiner;
 import org.apache.samza.sql.operators.window.FullStateTimeWindowOp;
-import org.apache.samza.sql.window.storage.WindowKey;
+import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.WindowOutputStream;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.storage.kv.KeyValueStore;
@@ -55,7 +55,7 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
   private KeyValueStore<EntityName, List<Object>> opOutputStore;
   private FullStateTimeWindowOp wndOp1;
   private FullStateTimeWindowOp wndOp2;
-  private StreamStreamJoin joinOp;
+  private StreamStreamJoiner joinOp;
 
   private FullStateTimeWindowOp getWindowOp(EntityName streamName) {
     if (streamName.equals(EntityName.getStreamName("kafka:stream1"))) {
@@ -78,6 +78,16 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     }
   }
 
+  private void joinWindowOutput(WindowOutputStream<OrderedStoreKey> output, SqlMessageCollector sqlCollector)
+      throws Exception {
+    // TODO: update the interface of the StreamStreamJoinOp s.t. it can be more intuitive to human
+    // process all output from the window operator
+    KeyValueIterator<OrderedStoreKey, Tuple> iter = output.all();
+    while (iter.hasNext()) {
+      this.joinOp.process(iter.next().getValue(), sqlCollector);
+    }
+  }
+
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
@@ -90,25 +100,48 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     // based on tuple's stream name, get the window op and run process()
     FullStateTimeWindowOp wndOp = getWindowOp(ituple.getEntityName());
     wndOp.addMessage(ituple);
-    WindowOutputStream<WindowKey> output = wndOp.getResult();
+    WindowOutputStream<OrderedStoreKey> output = wndOp.getResult();
     if (output == null) {
       return;
     }
 
-    // TODO: update the interface of the StreamStreamJoinOp s.t. it can be more intuitive to human
-    // process all output from the window operator
-    KeyValueIterator<WindowKey, Tuple> iter = output.all();
-    while (iter.hasNext()) {
-      this.joinOp.process(iter.next().getValue(), sqlCollector);
-    }
-
+    joinWindowOutput(output, sqlCollector);
     // get the output from the join operator and send them
     processJoinOutput(sqlCollector.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
+
+    // flush the window operator states and clear up the output, since the output has been processed successfully.
+    wndOp.flush();
 
   }
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
+    // create the StoreMessageCollector
+    StoreMessageCollector sqlCollector = new StoreMessageCollector(this.opOutputStore);
+
+    // based on tuple's stream name, get the window op and run process()
+    wndOp1.updateOutputs();
+    wndOp2.updateOutputs();
+
+    // TODO: update the interface of the StreamStreamJoinOp s.t. it can be more intuitive to human
+    // process all output from the window operator
+    WindowOutputStream<OrderedStoreKey> wndOut1 = wndOp1.getResult();
+    WindowOutputStream<OrderedStoreKey> wndOut2 = wndOp2.getResult();
+
+    if (wndOut1 != null) {
+      joinWindowOutput(wndOut1, sqlCollector);
+    }
+
+    if (wndOut2 != null) {
+      joinWindowOutput(wndOut2, sqlCollector);
+    }
+
+    // get the output from the join operator and send them
+    processJoinOutput(sqlCollector.removeOutput(this.joinOp.getSpec().getOutputNames().get(0)), collector);
+
+    // flush the window operator states and clear up the output, since the output has been processed successfully.
+    wndOp1.flush();
+    wndOp2.flush();
   }
 
   @SuppressWarnings("unchecked")
@@ -124,7 +157,7 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     List<String> joinKeys = new ArrayList<String>();
     joinKeys.add("key1");
     joinKeys.add("key2");
-    this.joinOp = new StreamStreamJoin("joinOp", inputRelations, "joinOutput", joinKeys);
+    this.joinOp = new StreamStreamJoiner("joinOp", inputRelations, "joinOutput", joinKeys);
     // Finally, initialize all operators
     this.opOutputStore =
         (KeyValueStore<EntityName, List<Object>>) context.getStore("samza-sql-operator-output-kvstore");

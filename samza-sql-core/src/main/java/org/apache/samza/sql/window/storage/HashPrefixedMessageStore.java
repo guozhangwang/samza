@@ -35,12 +35,12 @@ public class HashPrefixedMessageStore extends MessageStore {
 
   private final char PREFIX_DENOMINATOR = '_';
 
-  public HashPrefixedMessageStore(Stream<WindowKey> msgStore, List<String> orderKeyFields, EntityName strmName) {
-    super(msgStore, orderKeyFields, strmName);
+  public HashPrefixedMessageStore(Stream<OrderedStoreKey> msgStore, EntityName strmName, MessageStoreSpec spec) {
+    super(msgStore, strmName, spec);
   }
 
   private String getPrefix(List<Entry<String, Object>> filterFields) {
-    // TODO: need to validate that the filterFields are exactly the fields listed in orderKeyFields
+    // TODO: need to validate that the filterFields are exactly the fields listed in OrderedStoreKeyFields
     StringBuffer strBuffer = new StringBuffer();
     for (Entry<String, Object> entry : filterFields) {
       strBuffer.append(entry.getValue().toString()).append(PREFIX_DENOMINATOR);
@@ -48,33 +48,33 @@ public class HashPrefixedMessageStore extends MessageStore {
     return strBuffer.toString();
   }
 
-  private Range<WindowKey> getPrefixedRange(Range<WindowKey> range, List<Entry<String, Object>> filterFields) {
+  private Range<OrderedStoreKey> getPrefixedRange(Range<OrderedStoreKey> range, List<Entry<String, Object>> filterFields) {
     String prefixStr = this.getPrefix(filterFields);
     return Range.between(new PrefixedKey(prefixStr, range.getMin()), new PrefixedKey(prefixStr, range.getMax()));
   }
 
   @Override
-  public WindowKey getKey(WindowKey extKey, Tuple tuple) {
+  public OrderedStoreKey getKey(OrderedStoreKey extKey, Tuple tuple) {
     StringBuilder prefixStr = new StringBuilder();
-    for (String field : getOrderKeys()) {
+    for (String field : this.getSpec().getPrefixFields()) {
       prefixStr.append(tuple.getMessage().getFieldData(field).toString()).append(PREFIX_DENOMINATOR);
     }
     return new PrefixedKey(prefixStr.toString(), extKey);
   }
 
   @Override
-  public KeyValueIterator<WindowKey, Tuple> getMessages(Range<WindowKey> extRange,
+  public KeyValueIterator<OrderedStoreKey, Tuple> getMessages(Range<OrderedStoreKey> extRange,
       List<Entry<String, Object>> filterFields) {
-    Range<WindowKey> prefixRange = this.getPrefixedRange(extRange, filterFields);
+    Range<OrderedStoreKey> prefixRange = this.getPrefixedRange(extRange, filterFields);
     return this.range(prefixRange.getMin(), prefixRange.getMax());
   }
 
   @Override
-  public void purge(Range<WindowKey> extRange) {
+  public void purge(Range<OrderedStoreKey> extRange) {
     // Naive implementation of purge for now, will be costly since it traverses through all possible prefix keys
-    KeyValueIterator<WindowKey, Tuple> iter = this.all();
+    KeyValueIterator<OrderedStoreKey, Tuple> iter = this.all();
     while (iter.hasNext()) {
-      Entry<WindowKey, Tuple> entry = iter.next();
+      Entry<OrderedStoreKey, Tuple> entry = iter.next();
       PrefixedKey key = (PrefixedKey) entry.getKey();
       if (extRange.contains(key.getKey()) || extRange.getMin().compareTo(key.getKey()) > 0) {
         this.delete(entry.getKey());

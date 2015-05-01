@@ -22,5 +22,5 @@ package org.apache.samza.sql.window.storage;
 /**
  * This defines the base class for all keys used in {@link org.apache.samza.sql.window.storage.MessageStore}, as well as window state store
  */
-public abstract class WindowKey implements Comparable<WindowKey> {
+public abstract class OrderedStoreKey implements Comparable<OrderedStoreKey> {
 }

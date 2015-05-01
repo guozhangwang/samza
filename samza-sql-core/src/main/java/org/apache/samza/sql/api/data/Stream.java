@@ -33,6 +33,6 @@ public interface Stream<K extends Comparable<?>> extends Relation<K> {
    *
    * @return The list of field names used to construct the order key for the stream
    */
-  List<String> getOrderKeys();
+  List<String> getOrderFields();
 
 }

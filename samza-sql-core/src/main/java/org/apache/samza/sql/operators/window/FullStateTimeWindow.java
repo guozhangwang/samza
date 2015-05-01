@@ -22,8 +22,8 @@ package org.apache.samza.sql.operators.window;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.Tuple;
+import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.Range;
-import org.apache.samza.sql.window.storage.WindowKey;
 import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
 
@@ -33,8 +33,8 @@ import org.apache.samza.storage.kv.KeyValueIterator;
  */
 public interface FullStateTimeWindow {
 
-  KeyValueIterator<WindowKey, Tuple> getMessages(Range<Long> timeRange, List<Entry<String, Object>> filterFields);
+  KeyValueIterator<OrderedStoreKey, Tuple> getMessages(Range<Long> timeRange, List<Entry<String, Object>> filterFields);
 
-  KeyValueIterator<WindowKey, Tuple> getMessages(Range<Long> timeRange);
+  KeyValueIterator<OrderedStoreKey, Tuple> getMessages(Range<Long> timeRange);
 
 }

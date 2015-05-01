@@ -44,14 +44,14 @@ public class WindowOutputStream<K extends Comparable<?>> implements Stream<K> {
   private final EntityName strmName;
 
   /**
-   * The list of fields that are used as ordering keys in this {@code WindowOutputStream}. The order of fields signifies the order in comparison of keys.
+   * The {@link org.apache.samza.sql.window.storage.MessageStoreSpec} that specify the message store key-value structure
    */
-  private final List<String> orderKeys;
+  private final MessageStoreSpec spec;
 
-  public WindowOutputStream(Stream<K> store, EntityName outStrm, List<String> orderKeys) {
+  public WindowOutputStream(Stream<K> store, EntityName outStrm, MessageStoreSpec spec) {
     this.underlying = store;
     this.strmName = outStrm;
-    this.orderKeys = orderKeys;
+    this.spec = spec;
   }
 
   @Override
@@ -100,8 +100,8 @@ public class WindowOutputStream<K extends Comparable<?>> implements Stream<K> {
   }
 
   @Override
-  public List<String> getOrderKeys() {
-    return this.orderKeys;
+  public List<String> getOrderFields() {
+    return this.spec.getOrderFields();
   }
 
   /**
@@ -112,6 +112,10 @@ public class WindowOutputStream<K extends Comparable<?>> implements Stream<K> {
     while (iter.hasNext()) {
       underlying.delete(iter.next().getKey());
     }
+  }
+
+  public MessageStoreSpec getSpec() {
+    return this.spec;
   }
 
 }

@@ -20,17 +20,19 @@
 package org.apache.samza.sql.operators.window;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Stream;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.exception.OperatorException;
+import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.Range;
 import org.apache.samza.sql.window.storage.TimeAndOffsetKey;
 import org.apache.samza.sql.window.storage.TimeKey;
-import org.apache.samza.sql.window.storage.WindowKey;
 import org.apache.samza.sql.window.storage.WindowOutputStream;
 import org.apache.samza.sql.window.storage.WindowState;
 import org.apache.samza.storage.kv.Entry;
@@ -54,7 +56,7 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
   //TODO: stub to be updated w/ real window spec constructions
   public FullStateTimeWindowOp(String wndId, int size, String inputStrm, String outputEntity) {
     // TODO Auto-generated constructor stub
-    super(null);
+    super(new WindowOpSpec(wndId, EntityName.getStreamName(inputStrm), EntityName.getStreamName(outputEntity), size));
     this.outputStreamName = String.format("wnd-outstrm-%s", wndId);
   }
 
@@ -63,21 +65,21 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
   public void init(Config config, TaskContext context) throws Exception {
     super.init(config, context);
     this.outputStream =
-        new WindowOutputStream<WindowKey>((Stream<WindowKey>) context.getStore(this.outputStreamName),
-            EntityName.getStreamName(this.outputStreamName), this.getSpec().getMessageStoreSpec().orderKeys);
+        new WindowOutputStream<OrderedStoreKey>((Stream<OrderedStoreKey>) context.getStore(this.outputStreamName),
+            EntityName.getStreamName(this.outputStreamName), this.getSpec().getMessageStoreSpec());
   }
 
   @Override
   public void addMessage(Tuple tuple) throws Exception {
-    //    1. Check whether the message selector is disabled for this window operator
+    // TODO: 1. Check whether the message selector is disabled for this window operator
     //    1. If yes, log a warning and throws exception
     if (this.isInputDisabled()) {
       throw OperatorException.getInputDisabledException(String.format(
           "The input to this window operator is disabled. Operator ID: %s", this.getSpec().getId()));
     }
     // 2. Check whether the message is out-of-retention
-    //    1. If yes, send the message to error topic and return
-    if (this.spec.getRetention().isExpired(tuple)) {
+    // TODO:   1. If yes, send the message to error topic and return
+    if (this.isExpired(tuple)) {
       throw OperatorException.getMessageTooOldException(String.format("Message is out-of-retention. Operator ID: %s",
           this.getSpec().getId()));
     }
@@ -87,100 +89,111 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
     if (this.isRepeatedMessage(tuple)) {
       return;
     }
-    // 4. Check to see whether the incoming message belongs to a new window
-    //    1. If yes, Call openNextWindow() and repeat
-    //    2. Otherwise, continue
-    List<WindowKey> allWnds = this.findAllWindows(tuple);
-    // 5. Add incoming message to all windows that includes it and add those windows to pending updates list
-    // 6. For all windows in pending updates list, do the following
-    //    1. updateResult() to refresh the aggregation results
-    //    2. Check to see whether we need to emit the corresponding window outputs
-    //       1. If the window is the current window, check with early emission policy to see whether we need to flush aggregated result
-    //          1. If yes, add this window to pending flush list and continue
-    //       2. For any window, check the full size policy to see whether we need to send out the window output
-    //          1. If yes, add this window to pending flush list and continue
-    //       3. For a past window, check with late arrival policy to see whether we need to send out past window outputs
-    //          1. If yes, add this window to pending flush list and continue
-    for (WindowKey key : allWnds) {
-      WindowState wnd = this.wndStore.get(key);
-      if (this.getMessageTimeNano(tuple) >= wnd.getStartTimeNano()
-          && this.getMessageTimeNano(tuple) <= wnd.getEndTimeNano()) {
-        addMessageToWindow(tuple, key, wnd);
-      }
-    }
-    // 7. Send out pending windows updates
-    //    1. For each window in pending flush list, send the updates to the next operator
-    //       1. If window outputs can't be accepted, disable the message selector from delivering messages to this window operator and return
-    //    2. Finally, flush the Window State Store and Window Mark
-    //       1. If retention limit is triggered, purge the out-of-retention windows/messages from Message Store and Window Meta Store before flushing
-    //
-    // Helper function openNextWindow()
-    //
-    // 1. If there is any new messages in **current window**, add **current window** to pending updates list
-    // 2. Create the next window and add all **in-time** messages to the next window
-    // 3. set next window to **current window**, return
-  }
-
-  private void addMessageToWindow(Tuple tuple, WindowKey key, WindowState wnd) {
-    // 6. For all windows in pending updates list, do the following
-    //    1. updateResult() to refresh the aggregation results
-    updateWindow(tuple, key, wnd);
-    //    2. Check to see whether we need to emit the corresponding window outputs
-    //       1. If the window is the current window, check with early emission policy to see whether we need to flush aggregated result
-    //          1. If yes, add this window to pending flush list and continue
-    //       2. For any window, check the full size policy to see whether we need to send out the window output
-    //          1. If yes, add this window to pending flush list and continue
-    //       3. For a past window, check with late arrival policy to see whether we need to send out past window outputs
-    //          1. If yes, add this window to pending flush list and continue
-    if (isScheduledOutput(key) || isFullSizeOutput(key) || isLateArrivalOutput(key)) {
-      addToOutputs(tuple, key);
-    }
-  }
-
-  private boolean isLateArrivalOutput(WindowKey key) {
-    // TODO: add implementation of late arrival policy checks here
-    return false;
-  }
-
-  private boolean isFullSizeOutput(WindowKey key) {
-    // TODO: add implementation of full size output policy checks here
-    return false;
-  }
-
-  private boolean isScheduledOutput(WindowKey key) {
-    // TODO: add implementation of scheduled output policy checks here
-    return false;
+    // 4. Add incoming message to all windows that includes it and add those windows to pending output list
+    updateWindows(tuple, this.getAllWindows(tuple));
+    // 5. For all windows in pending output list, update the window operator's output stream
+    updateOutputs();
   }
 
   @SuppressWarnings("unchecked")
-  private void addToOutputs(Tuple tuple, WindowKey key) {
-    ((WindowOutputStream<WindowKey>) this.outputStream).put(
-        new TimeAndOffsetKey(tuple.getMessageTimeNano(), tuple.getOffset()), tuple);
+  @Override
+  public WindowOutputStream<OrderedStoreKey> getResult() {
+    return this.outputStream;
   }
 
-  private WindowKey getMessageStoreKey(Tuple tuple) {
+  @Override
+  public void flush() throws Exception {
+    // clear the current window output, purge the out-of-retention windows,
+    // and flush the wndStore and messageStore
+    this.outputStream.clear();
+    // TODO: depending on whether we delay the KV-store deletion in a LoggedStore, the order of purge() and flush() may need to be changed.
+    this.purge();
+    // NOTE: the following flush sequence can result in the scenario that some messages persisted in MessageStore have not been output yet.
+    // The recovery procedure in the window operator should re-construct the pending output per window list, when restart the container.
+    // TODO: we need an efficient way to identify that from which offset that we need to re-construct some pending output windows.
+    this.wndStore.flush(this.pendingFlushWindows);
+    this.pendingFlushWindows.clear();
+    this.messageStore.flush();
+  }
+
+  @Override
+  public void updateOutputs() {
+    for (OrderedStoreKey key : this.pendingOutputPerWindow.keySet()) {
+      // for each window w/ pending output, check to see whether we need to emit the corresponding window outputs
+      //       1. If the window is the current window, check with early emission policy to see whether we need to flush aggregated result
+      //          1. If yes, add this window to pending flush list and continue
+      //       2. For any window, check the full size policy to see whether we need to send out the window output
+      //          1. If yes, add this window to pending flush list and continue
+      //       3. For a past window, check with late arrival policy to see whether we need to send out past window outputs
+      //          1. If yes, add this window to pending flush list and continue
+      if (hasScheduledOutput(key) || hasFullSizeOutput(key) || hasLateArrivalOutput(key)) {
+        addToOutputs(key);
+      }
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void addToOutputs(OrderedStoreKey key) {
+    Map<OrderedStoreKey, Tuple> pendingOutputPerWindow = this.pendingOutputPerWindow.get(key);
+    for (Tuple tuple : pendingOutputPerWindow.values()) {
+      ((WindowOutputStream<OrderedStoreKey>) this.outputStream).put(
+          new TimeAndOffsetKey(tuple.getMessageTimeNano(), tuple.getOffset()), tuple);
+    }
+    this.pendingOutputPerWindow.remove(key);
+    this.pendingFlushWindows.add(key);
+  }
+
+  private OrderedStoreKey getMessageStoreKey(Tuple tuple) {
     return this.messageStore.getKey(new TimeAndOffsetKey(tuple.getMessageTimeNano(), tuple.getOffset()), tuple);
   }
 
-  private void updateWindow(Tuple tuple, WindowKey key, WindowState wnd) {
-    // For full state window, no need to update the aggregated value
-    wnd.setLastOffset(tuple.getOffset());
-    this.wndStore.put(key, wnd);
+  private void updateWindows(Tuple tuple, List<OrderedStoreKey> wndKeys) {
+    boolean addedToPendingOutput = false;
+    for (OrderedStoreKey key : wndKeys) {
+      WindowState wnd = this.wndStore.get(key);
+      // For full state window, no need to update the aggregated value, only update the last offset
+      // TODO: to reduce the update traffic to window store, this last offset can be delayed to flush until the corresponding window output is sent
+      wnd.setLastOffset(tuple.getOffset());
+      this.wndStore.put(key, wnd);
+      // Save message to the message store
+      addMsgToStore(tuple);
+      if (!addedToPendingOutput) {
+        // If the message has not been sent to window output
+        if (!this.pendingOutputPerWindow.containsKey(key)) {
+          // add to pending output map
+          this.pendingOutputPerWindow.put(key, new LinkedHashMap<OrderedStoreKey, Tuple>());
+        }
+        // add to each window's pending output queues
+        Map<OrderedStoreKey, Tuple> pendingOutput = this.pendingOutputPerWindow.get(key);
+        pendingOutput.put(new TimeAndOffsetKey(getMessageTimeNano(tuple), tuple.getOffset()), tuple);
+        addedToPendingOutput = true;
+      }
+    }
   }
 
-  private List<WindowKey> findAllWindows(Tuple tuple) {
-    List<WindowKey> wndKeys = new ArrayList<WindowKey>();
+  private void addMsgToStore(Tuple tuple) {
+    // Idempotent add operation
+    if (this.messageStore.get(this.messageStore.getKey(getMessageStoreKey(tuple), tuple)) == null) {
+      this.messageStore.put(this.messageStore.getKey(getMessageStoreKey(tuple), tuple), tuple);
+    }
+
+  }
+
+  private List<OrderedStoreKey> getAllWindows(Tuple tuple) {
+    List<OrderedStoreKey> wndKeys = new ArrayList<OrderedStoreKey>();
     long msgTime = this.getMessageTimeNano(tuple);
-    Entry<WindowKey, WindowState> firstWnd = getFirstWnd();
+    Entry<OrderedStoreKey, WindowState> firstWnd = getFirstWnd();
     // assuming this is a fixed size window, the windows that include the msgTime will be computed based on the offset in time
     // from the firstWnd and the corresponding widow size
     long stepSize = this.getStepSizeNano();
     long size = this.getSizeNano();
+    // The start time range for all windows that may include the msgTime is: (msgTime - size, msgTime] == [msgTime - size + 1, msgTime]
+    // Based on the initialized window boundary, we need to search for all windows in this range and if there are missing windows, add them.
     long startWnd = 0;
     if (firstWnd == null) {
-      startWnd = this.findInitWndStartTimeNano(msgTime);
+      startWnd = msgTime;
     } else {
-      long offsetTime = msgTime - size - firstWnd.getValue().getStartTimeNano();
+      long offsetTime = msgTime - size + 1 - firstWnd.getValue().getStartTimeNano();
       long numOfWnds = offsetTime / stepSize;
       if (offsetTime < 0) {
         numOfWnds--;
@@ -192,7 +205,7 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
       if (this.wndStore.get(wndKey) == null) {
         // If the window if missing, open the new window and save to the store
         long startTime = wndKey.getTimeNano();
-        long endTime = startTime + this.getStepSizeNano();
+        long endTime = startTime + size;
         this.wndStore.put(wndKey, new WindowState(tuple.getOffset(), startTime, endTime));
       }
       wndKeys.add(wndKey);
@@ -217,41 +230,25 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
     return tuple.getMessageTimeNano();
   }
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public WindowOutputStream<WindowKey> getResult() {
-    return this.outputStream;
-  }
-
-  @Override
-  public void flush() throws Exception {
-    // clear the current window output, purge the out-of-retention windows,
-    // and flush the wndStore and messageStore
-    this.outputStream.clear();
-    this.purge();
-    this.wndStore.flush();
-    this.messageStore.flush();
-  }
-
-  private Range<WindowKey> getMessageKeyRangeByTime(Range<Long> timeRange) {
+  private Range<OrderedStoreKey> getMessageKeyRangeByTime(Range<Long> timeRange) {
     // TODO: the range may need to be adjusted to reflect retention policies
-    WindowKey minKey = new TimeAndOffsetKey(timeRange.getMin(), LongOffset.getMinOffset());
+    OrderedStoreKey minKey = new TimeAndOffsetKey(timeRange.getMin(), LongOffset.getMinOffset());
     // Set to the next nanosecond w/ minimum offset since the right boundary is exclusive
     // TODO: need to work on Offset that is not LongOffset
-    WindowKey maxKey = new TimeAndOffsetKey(timeRange.getMax() + 1, LongOffset.getMinOffset());
+    OrderedStoreKey maxKey = new TimeAndOffsetKey(timeRange.getMax() + 1, LongOffset.getMinOffset());
     return Range.between(minKey, maxKey);
   }
 
   @Override
-  public KeyValueIterator<WindowKey, Tuple> getMessages(Range<Long> timeRange,
+  public KeyValueIterator<OrderedStoreKey, Tuple> getMessages(Range<Long> timeRange,
       List<Entry<String, Object>> filterFields) {
-    Range<WindowKey> keyRange = getMessageKeyRangeByTime(timeRange);
+    Range<OrderedStoreKey> keyRange = getMessageKeyRangeByTime(timeRange);
     // This is to get the range from the messageStore and possibly apply filters in the key or the value
     return this.messageStore.getMessages(keyRange, filterFields);
   }
 
   @Override
-  public KeyValueIterator<WindowKey, Tuple> getMessages(Range<Long> timeRange) {
+  public KeyValueIterator<OrderedStoreKey, Tuple> getMessages(Range<Long> timeRange) {
     // TODO Auto-generated method stub
     return this.getMessages(timeRange, new ArrayList<Entry<String, Object>>());
   }
@@ -259,19 +256,23 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
   @Override
   protected boolean isRepeatedMessage(Tuple msg) {
     // TODO: this needs to check the message store to see whether the message is already there.
+    // TODO: this also needs to check against the wndStore lastOffsets to make sure that the message output is sent out
     return this.messageStore.get(this.getMessageStoreKey(msg)) != null;
   }
 
   @Override
   protected void purge() {
     // check all wnds in the wndStore and all messages in the messageStore to see whether we need to purge/remove out-of-retention windows
-    KeyValueIterator<WindowKey, WindowState> iter = this.wndStore.all();
+    KeyValueIterator<OrderedStoreKey, WindowState> iter = this.wndStore.all();
     long minTime = Long.MAX_VALUE;
     long maxTime = Long.MIN_VALUE;
     while (iter.hasNext()) {
-      Entry<WindowKey, WindowState> entry = iter.next();
-      if (this.retention.isExpired(entry.getValue())) {
+      Entry<OrderedStoreKey, WindowState> entry = iter.next();
+      if (this.isExpired(entry.getValue())) {
         this.wndStore.delete(entry.getKey());
+        if (this.pendingFlushWindows.contains(entry.getKey())) {
+          this.pendingFlushWindows.remove(entry.getKey());
+        }
         if (maxTime < entry.getValue().getEndTimeNano()) {
           maxTime = entry.getValue().getEndTimeNano();
         }
@@ -283,10 +284,9 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
 
     // now purge message store
     // Set to the next nanosecond w/ minimum offset since the right boundary is exclusive
-    Range<WindowKey> range =
+    Range<OrderedStoreKey> range =
         Range.between(new TimeAndOffsetKey(minTime, LongOffset.getMinOffset()), new TimeAndOffsetKey(maxTime + 1,
             LongOffset.getMinOffset()));
     this.messageStore.purge(range);
   }
-
 }

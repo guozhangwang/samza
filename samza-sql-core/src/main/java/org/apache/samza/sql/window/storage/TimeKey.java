@@ -22,7 +22,7 @@ package org.apache.samza.sql.window.storage;
 /**
  * This class implements key that is based on time
  */
-public class TimeKey extends WindowKey {
+public class TimeKey extends OrderedStoreKey {
   private final Long timeNano;
 
   public TimeKey(long timeNano) {
@@ -30,7 +30,7 @@ public class TimeKey extends WindowKey {
   }
 
   @Override
-  public int compareTo(WindowKey o) {
+  public int compareTo(OrderedStoreKey o) {
     if (!(o instanceof TimeKey)) {
       throw new IllegalArgumentException("Cannot compare TimeKey to " + o.getClass().getName());
     }

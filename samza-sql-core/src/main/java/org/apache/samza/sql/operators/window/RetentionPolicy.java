@@ -19,8 +19,6 @@
 
 package org.apache.samza.sql.operators.window;
 
-import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.window.storage.WindowState;
 
 
 /**
@@ -42,8 +40,4 @@ public abstract class RetentionPolicy {
   public long getTime() {
     return this.minTime;
   }
-
-  abstract boolean isExpired(WindowState wnd);
-
-  abstract boolean isExpired(Tuple msg);
 }

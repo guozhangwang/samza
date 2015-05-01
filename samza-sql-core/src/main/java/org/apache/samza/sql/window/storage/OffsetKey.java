@@ -25,7 +25,7 @@ import org.apache.samza.system.sql.Offset;
 /**
  * This class defines keys that are based on {@link org.apache.samza.system.sql.Offset}
  */
-public class OffsetKey extends WindowKey {
+public class OffsetKey extends OrderedStoreKey {
   private final Offset offset;
 
   public OffsetKey(Offset offset) {
@@ -33,7 +33,7 @@ public class OffsetKey extends WindowKey {
   }
 
   @Override
-  public int compareTo(WindowKey o) {
+  public int compareTo(OrderedStoreKey o) {
     if (!(o instanceof OffsetKey)) {
       throw new IllegalArgumentException("Cannot compare OffsetMessageKey with other type of keys. Other key type:"
           + o.getClass().getName());

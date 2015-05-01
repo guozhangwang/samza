@@ -25,7 +25,7 @@ import org.apache.samza.system.sql.Offset;
 /**
  * This class implements key that is composed of: (time, offset)
  */
-public class TimeAndOffsetKey extends WindowKey {
+public class TimeAndOffsetKey extends OrderedStoreKey {
   private final Offset offset;
   private final Long timeNano;
 
@@ -35,7 +35,7 @@ public class TimeAndOffsetKey extends WindowKey {
   }
 
   @Override
-  public int compareTo(WindowKey o) {
+  public int compareTo(OrderedStoreKey o) {
     if (!(o instanceof TimeAndOffsetKey)) {
       throw new IllegalArgumentException("Cannot compare TimeAndOffsetKey with other type of keys. Other key type:"
           + o.getClass().getName());

@@ -19,14 +19,18 @@
 
 package org.apache.samza.sql.operators.window;
 
-import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
-import org.apache.samza.sql.window.storage.WindowKey;
+import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.WindowOutputStream;
 import org.apache.samza.sql.window.storage.WindowState;
+import org.apache.samza.sql.window.storage.WindowStore;
 import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.storage.kv.KeyValueStore;
@@ -42,13 +46,31 @@ public abstract class WindowOp extends SimpleOperator {
   protected final String wndId;
   protected final RetentionPolicy retention;
 
-  protected KeyValueStore<WindowKey, WindowState> wndStore;
+  /**
+   * This is the window store that keeps all window states in retention. The underlying store should be a logged store to ensure recovery.
+   */
+  protected WindowStore wndStore;
+
+  /**
+   * This is the flag to indicate whether the input to this window operator is disabled or not
+   */
   protected boolean isInputDisabled = false;
 
+  /**
+   * This is the store for all outputs from all windows that are ready to be sent or retrieved from the window operator
+   */
   @SuppressWarnings("rawtypes")
   protected WindowOutputStream outputStream;
 
-  protected Entry<WindowKey, WindowState> firstWnd = null;
+  /**
+   * This is the store for outputs per {@link org.apache.samza.sql.window.storage.WindowKey} that are are not ready to be sent or retrieved from the window operator
+   */
+  protected Map<OrderedStoreKey, Map<OrderedStoreKey, Tuple>> pendingOutputPerWindow;
+
+  /**
+   * This is the list of windows that has updated results in the output to be sent/retrieved recently.
+   */
+  protected Set<OrderedStoreKey> pendingFlushWindows;
 
   WindowOp(WindowOpSpec spec) {
     super(spec);
@@ -62,57 +84,123 @@ public abstract class WindowOp extends SimpleOperator {
     return this.spec;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked" })
   @Override
   public void init(Config config, TaskContext context) throws Exception {
-    this.wndStore = (KeyValueStore<WindowKey, WindowState>) context.getStore("wnd-store-" + this.wndId);
+    // TODO: One optimization to the following store is that this.wndStore can implements a delayed-write cache that does not generate 1 writes to the changelog per window update.
+    // Instead, the wndStore can batch the writes and flush out the updates to changelog periodically (i.e. everytime the corresponding window output is flushed.)
+    this.wndStore =
+        new WindowStore((KeyValueStore<OrderedStoreKey, WindowState>) context.getStore("wnd-store-" + this.wndId));
+    this.pendingOutputPerWindow = new HashMap<OrderedStoreKey, Map<OrderedStoreKey, Tuple>>();
+    this.pendingFlushWindows = new HashSet<OrderedStoreKey>();
   }
 
+  /**
+   * Public API method for {@code WindowOp} to add a message to the window operator
+   *
+   * @param tuple The incoming message
+   * @throws Exception Throws Exception if add message failed
+   */
+  public abstract void addMessage(Tuple tuple) throws Exception;
+
+  /**
+   * Public API method to get the window output result
+   * @return
+   */
+  @SuppressWarnings("rawtypes")
+  public abstract WindowOutputStream getResult();
+
+  /**
+   * Public API method to flush the window stores and clear the pending outputs
+   *
+   * @throws Exception Throws Exception if failed to flush the window states
+   */
+  public abstract void flush() throws Exception;
+
+  /**
+   * Public API method to allow the window operator update the output streams
+   *
+   * @throws Exception Throws Exception if failed to update the output stream
+   */
+  public abstract void updateOutputs() throws Exception;
+
+  /**
+   * Default internal method to access {@code isInputDisabled} member variable
+   *
+   * @return The member variable {@code isInputDisabled}
+   */
   protected boolean isInputDisabled() {
     return this.isInputDisabled;
   }
 
-  protected Entry<WindowKey, WindowState> getFirstWnd() {
-    return this.firstWnd;
-  }
-
-  protected void resetFirstWnd() {
-    KeyValueIterator<WindowKey, WindowState> wndIter = this.wndStore.all();
+  protected Entry<OrderedStoreKey, WindowState> getFirstWnd() {
+    KeyValueIterator<OrderedStoreKey, WindowState> wndIter = this.wndStore.all();
     while (wndIter.hasNext()) {
-      Entry<WindowKey, WindowState> wnd = wndIter.next();
-      if (!this.retention.isExpired(wnd.getValue())) {
-        this.firstWnd = wnd;
-        return;
+      Entry<OrderedStoreKey, WindowState> wnd = wndIter.next();
+      if (!this.isExpired(wnd.getValue())) {
+        return wnd;
       }
     }
-    this.firstWnd = null;
+    return null;
   }
 
-  protected long findInitWndStartTimeNano(long nanoMsgTime) {
-    switch (this.getSpec().getInitBoundary()) {
-      case HOUR:
-        return TimeUnit.HOURS.toNanos(TimeUnit.NANOSECONDS.toHours(nanoMsgTime));
-      case MIN:
-        return TimeUnit.MINUTES.toNanos(TimeUnit.NANOSECONDS.toMinutes(nanoMsgTime));
-      case SEC:
-        return nanoMsgTime / 1000000000 * 1000000000;
-      case MS:
-        return nanoMsgTime / 1000000 * 1000000;
-      case MICRO:
-        return nanoMsgTime / 1000 * 1000;
-      default:
-        return nanoMsgTime;
-    }
+  protected boolean isExpired(WindowState wnd) {
+    //TODO: implement checking expiration of the wnd
+    return false;
   }
 
-  abstract public void addMessage(Tuple tuple) throws Exception;
+  protected boolean isExpired(Tuple msg) {
+    //TODO: implement checking expiration of the msg
+    return false;
+  }
 
-  @SuppressWarnings("rawtypes")
-  abstract public WindowOutputStream getResult();
-
-  abstract public void flush() throws Exception;
-
+  /**
+   * The internal API method to check whether the incoming message is an repeated/already processed (i.e. included in the output)
+   *
+   * @param msg The incoming message
+   * @return True if the incoming message is a repeated one; otherwise, return false;
+   */
   protected abstract boolean isRepeatedMessage(Tuple msg);
 
+  /**
+   * The internal API method to check and cleanup all expired windows and messages from the window stores.
+   */
   protected abstract void purge();
+
+  /**
+   * The internal API method to check whether the window corresponding to {@code key} should have a late-arrival output or not
+   *
+   * @param key The window key to examine for late arrival output
+   * @return True if there is late arrival output to be sent out for this window {@code key}; otherwise, return false
+   */
+  protected boolean hasLateArrivalOutput(OrderedStoreKey key) {
+    // TODO: add implementation of late arrival policy checks here
+    // For each pending output window, there must be a state associated showing when the last output happened, whether this is a late arrival or not
+    return false;
+  }
+
+  /**
+   * The internal API method to check whether the window corresponding to {@code key} should have a full-size output or not
+   *
+   * @param key The window key to examine for full-size output
+   * @return True if there is a full-size output to be sent out for this window {@code key}; otherwise, return false
+   */
+  protected boolean hasFullSizeOutput(OrderedStoreKey key) {
+    // TODO: add implementation of full size output policy checks here
+    // For each pending output window, there must be a state associated showing when the last update happened, whether this is triggering a window full event or not
+    return false;
+  }
+
+  /**
+   * The internal API method to check whether the window corresponding to {@code key} should have a scheduled output or not
+   *
+   * @param key The window key to examine for scheduled output
+   * @return True if there is any scheduled output to be sent out for this wind {@code key}; otherwise, return false;
+   */
+  protected boolean hasScheduledOutput(OrderedStoreKey key) {
+    // TODO: add implementation of scheduled output policy checks here
+    // For each pending output window, there must be a state associated showing when the last output happened
+    return false;
+  }
+
 }

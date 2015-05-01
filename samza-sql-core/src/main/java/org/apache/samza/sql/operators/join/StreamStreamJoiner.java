@@ -31,8 +31,8 @@ import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.sql.operators.window.FullStateTimeWindow;
+import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.Range;
-import org.apache.samza.sql.window.storage.WindowKey;
 import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.task.MessageCollector;
@@ -44,18 +44,18 @@ import org.apache.samza.task.sql.SqlMessageCollector;
 /**
  * This class implements a simple stream-to-stream join
  */
-public class StreamStreamJoin extends SimpleOperator implements TupleOperator {
+public class StreamStreamJoiner extends SimpleOperator implements TupleOperator {
   private final StreamStreamJoinSpec spec;
 
   private Map<EntityName, FullStateTimeWindow> inputWindows = new HashMap<EntityName, FullStateTimeWindow>();
 
-  public StreamStreamJoin(StreamStreamJoinSpec spec) {
+  public StreamStreamJoiner(StreamStreamJoinSpec spec) {
     super(spec);
     this.spec = spec;
   }
 
   //TODO: stub constructor to allow compilation pass. Need to construct real StreamStreamJoinSpec.
-  public StreamStreamJoin(String opId, List<String> inputRelations, String output, List<String> joinKeys) {
+  public StreamStreamJoiner(String opId, List<String> inputRelations, String output, List<String> joinKeys) {
     super(null);
     this.spec = null;
   }
@@ -93,13 +93,13 @@ public class StreamStreamJoin extends SimpleOperator implements TupleOperator {
       if (strmName.equals(tuple.getEntityName())) {
         continue;
       }
-      KeyValueIterator<WindowKey, Tuple> tuples = getJoinSet(tuple, strmName);
-      streamSets.put(strmName, new Stream<WindowKey>() {
+      KeyValueIterator<OrderedStoreKey, Tuple> tuples = getJoinSet(tuple, strmName);
+      streamSets.put(strmName, new Stream<OrderedStoreKey>() {
         @SuppressWarnings("serial")
-        private Map<WindowKey, Tuple> tuplesMap = new LinkedHashMap<WindowKey, Tuple>() {
+        private Map<OrderedStoreKey, Tuple> tuplesMap = new LinkedHashMap<OrderedStoreKey, Tuple>() {
           {
             for (; tuples.hasNext();) {
-              Entry<WindowKey, Tuple> entry = tuples.next();
+              Entry<OrderedStoreKey, Tuple> entry = tuples.next();
               put(entry.getKey(), entry.getValue());
             }
           }
@@ -112,37 +112,37 @@ public class StreamStreamJoin extends SimpleOperator implements TupleOperator {
         }
 
         @Override
-        public Tuple get(WindowKey key) {
+        public Tuple get(OrderedStoreKey key) {
           // TODO Auto-generated method stub
           return null;
         }
 
         @Override
-        public void put(WindowKey key, Tuple value) {
+        public void put(OrderedStoreKey key, Tuple value) {
           // TODO Auto-generated method stub
 
         }
 
         @Override
-        public void putAll(List<Entry<WindowKey, Tuple>> entries) {
+        public void putAll(List<Entry<OrderedStoreKey, Tuple>> entries) {
           // TODO Auto-generated method stub
 
         }
 
         @Override
-        public void delete(WindowKey key) {
+        public void delete(OrderedStoreKey key) {
           // TODO Auto-generated method stub
 
         }
 
         @Override
-        public KeyValueIterator<WindowKey, Tuple> range(WindowKey from, WindowKey to) {
+        public KeyValueIterator<OrderedStoreKey, Tuple> range(OrderedStoreKey from, OrderedStoreKey to) {
           // TODO Auto-generated method stub
           return null;
         }
 
         @Override
-        public KeyValueIterator<WindowKey, Tuple> all() {
+        public KeyValueIterator<OrderedStoreKey, Tuple> all() {
           // TODO Auto-generated method stub
           return null;
         }
@@ -160,7 +160,7 @@ public class StreamStreamJoin extends SimpleOperator implements TupleOperator {
         }
 
         @Override
-        public List<String> getOrderKeys() {
+        public List<String> getOrderFields() {
           // TODO Auto-generated method stub
           return null;
         }
@@ -171,7 +171,7 @@ public class StreamStreamJoin extends SimpleOperator implements TupleOperator {
     return streamSets;
   }
 
-  private KeyValueIterator<WindowKey, Tuple> getJoinSet(Tuple tuple, EntityName strmName) {
+  private KeyValueIterator<OrderedStoreKey, Tuple> getJoinSet(Tuple tuple, EntityName strmName) {
     FullStateTimeWindow wndOp = inputWindows.get(strmName);
     // default to find time range
     Range<Long> timeRange = getTimeRange(tuple, strmName);
