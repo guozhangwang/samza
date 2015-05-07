@@ -28,13 +28,9 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.router.OperatorRouter;
 import org.apache.samza.sql.data.IncomingMessageTuple;
-import org.apache.samza.sql.operators.factory.SimpleOperatorFactoryImpl;
 import org.apache.samza.sql.operators.join.StreamStreamJoin;
-import org.apache.samza.sql.operators.join.StreamStreamJoinSpec;
 import org.apache.samza.sql.operators.partition.PartitionOp;
-import org.apache.samza.sql.operators.partition.PartitionSpec;
 import org.apache.samza.sql.operators.window.FullStateTimeWindowOp;
-import org.apache.samza.sql.operators.window.WindowOpSpec;
 import org.apache.samza.sql.router.SimpleRouter;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
@@ -58,7 +54,7 @@ import org.apache.samza.task.WindowableTask;
  * This example also uses an implementation of <code>SqlMessageCollector</code> (@see <code>OperatorMessageCollector</code>)
  * that uses <code>OperatorRouter</code> to automatically execute the whole paths that connects operators together.
  */
-public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
+public class UserCallbacksSqlTask implements StreamTask, InitableTask, WindowableTask {
 
   private OperatorRouter rteCntx;
 
@@ -78,8 +74,8 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     SqlMessageCollector opCollector = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
-
     long nanoSec = System.nanoTime();
+
     for (EntityName entity : this.rteCntx.getInputEntities()) {
       for (Iterator<Operator> iter = this.rteCntx.getNextOperators(entity).iterator(); iter.hasNext();) {
         iter.next().refresh(nanoSec, opCollector, coordinator);
@@ -90,20 +86,16 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
 
   @Override
   public void init(Config config, TaskContext context) throws Exception {
-    // create specification of all operators first
-    // 1. create 2 window specifications that define 2 windows of fixed length of 10 seconds
-    final WindowOpSpec spec1 =
-        new WindowOpSpec("fixedWnd1", EntityName.getStreamName("inputStream1"),
-            EntityName.getRelationName("fixedWndOutput1"), 10);
-    final WindowOpSpec spec2 =
-        new WindowOpSpec("fixedWnd2", EntityName.getStreamName("inputStream2"),
-            EntityName.getRelationName("fixedWndOutput2"), 10);
-    // 2. create a join specification that join the output from 2 window operators together
+    // create all operators via the operator factory
+    // 1. create two window operators
+    FullStateTimeWindowOp wnd1 = new FullStateTimeWindowOp("fixedWnd1", 10, "inputStream1", "fixedWndOutput1");
+    FullStateTimeWindowOp wnd2 = new FullStateTimeWindowOp("fixedWnd2", 10, "inputStream2", "fixedWndOutput2");
+    // 2. create one join operator
     @SuppressWarnings("serial")
-    List<EntityName> inputRelations = new ArrayList<EntityName>() {
+    List<String> inputRelations = new ArrayList<String>() {
       {
-        add(spec1.getOutputName());
-        add(spec2.getOutputName());
+        add("fixedWndOutput1");
+        add("fixedWndOutput2");
       }
     };
     @SuppressWarnings("serial")
@@ -113,35 +105,21 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
         add("key2");
       }
     };
-    StreamStreamJoinSpec joinSpec =
-        new StreamStreamJoinSpec("joinOp", inputRelations, EntityName.getRelationName("joinOutput"), joinKeys);
-    // 4. create the specification of a partition operator that re-partitions the stream based on <code>joinKey</code>
-    PartitionSpec parSpec =
-        new PartitionSpec("parOp1", joinSpec.getOutputName().getName(), new SystemStream("kafka", "parOutputStrm1"),
-            "joinKey", 50);
-
-    // create all operators via the operator factory
-    // 1. create two window operators
-    SimpleOperatorFactoryImpl operatorFactory = new SimpleOperatorFactoryImpl();
-    FullStateTimeWindowOp wnd1 = (FullStateTimeWindowOp) operatorFactory.getOperator(spec1);
-    FullStateTimeWindowOp wnd2 = (FullStateTimeWindowOp) operatorFactory.getOperator(spec2);
-    // 2. create one join operator
-    StreamStreamJoin join = (StreamStreamJoin) operatorFactory.getOperator(joinSpec);
-    // 3. create one stream operator
+    StreamStreamJoin join = new StreamStreamJoin("joinOp", inputRelations, "joinOutput", joinKeys);
     // 4. create a re-partition operator
-    PartitionOp par = (PartitionOp) operatorFactory.getOperator(parSpec);
+    PartitionOp par = new PartitionOp("parOp1", "joinOutput", new SystemStream("kafka", "parOutputStrm1"),
+        "joinKey", 50);
 
     // Now, connecting the operators via the OperatorRouter
     this.rteCntx = new SimpleRouter();
     // 1. set two system input operators (i.e. two window operators)
-    this.rteCntx.addOperator(spec1.getInputName(), wnd1);
-    this.rteCntx.addOperator(spec2.getInputName(), wnd2);
+    this.rteCntx.addOperator(wnd1.getSpec().getInputName(), wnd1);
+    this.rteCntx.addOperator(wnd2.getSpec().getInputName(), wnd2);
     // 2. connect join operator to both window operators
-    this.rteCntx.addOperator(spec1.getOutputName(), join);
-    this.rteCntx.addOperator(spec2.getOutputName(), join);
-    // 3. connect stream operator to the join operator
+    this.rteCntx.addOperator(wnd1.getSpec().getOutputName(), join);
+    this.rteCntx.addOperator(wnd2.getSpec().getOutputName(), join);
     // 4. connect re-partition operator to the stream operator
-    this.rteCntx.addOperator(joinSpec.getOutputName(), par);
+    this.rteCntx.addOperator(par.getSpec().getInputNames().get(0), par);
 
     for (Iterator<Operator> iter = this.rteCntx.iterator(); iter.hasNext();) {
       iter.next().init(config, context, null);

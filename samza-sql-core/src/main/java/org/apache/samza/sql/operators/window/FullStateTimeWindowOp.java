@@ -26,8 +26,10 @@ import java.util.Map;
 
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.EntityName;
+import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Stream;
 import org.apache.samza.sql.api.data.Tuple;
+import org.apache.samza.sql.api.operators.OperatorCallback;
 import org.apache.samza.sql.exception.OperatorException;
 import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.Range;
@@ -39,6 +41,8 @@ import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.system.sql.LongOffset;
 import org.apache.samza.task.TaskContext;
+import org.apache.samza.task.TaskCoordinator;
+import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
@@ -53,7 +57,7 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
     this.outputStreamName = String.format("wnd-outstrm-%s", wndId);
   }
 
-  //TODO: stub to be updated w/ real window spec constructions
+  //Ctor for fixed length time window, w/ default retention policy, message store, and timestamp
   public FullStateTimeWindowOp(String wndId, int size, String inputStrm, String outputEntity) {
     // TODO Auto-generated constructor stub
     super(new WindowOpSpec(wndId, EntityName.getStreamName(inputStrm), EntityName.getStreamName(outputEntity), size));
@@ -62,8 +66,8 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
 
   @SuppressWarnings("unchecked")
   @Override
-  public void init(Config config, TaskContext context) throws Exception {
-    super.init(config, context);
+  public void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception {
+    super.init(config, context, userCb);
     this.outputStream =
         new WindowOutputStream<OrderedStoreKey>((Stream<OrderedStoreKey>) context.getStore(this.outputStreamName),
             EntityName.getStreamName(this.outputStreamName), this.getSpec().getMessageStoreSpec());
@@ -92,7 +96,7 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
     // 4. Add incoming message to all windows that includes it and add those windows to pending output list
     updateWindows(tuple, this.getAllWindows(tuple));
     // 5. For all windows in pending output list, update the window operator's output stream
-    updateOutputs();
+    refresh();
   }
 
   @SuppressWarnings("unchecked")
@@ -117,7 +121,7 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
   }
 
   @Override
-  public void updateOutputs() {
+  public void refresh() {
     for (OrderedStoreKey key : this.pendingOutputPerWindow.keySet()) {
       // for each window w/ pending output, check to see whether we need to emit the corresponding window outputs
       //       1. If the window is the current window, check with early emission policy to see whether we need to flush aggregated result
@@ -137,14 +141,14 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
     Map<OrderedStoreKey, Tuple> pendingOutputPerWindow = this.pendingOutputPerWindow.get(key);
     for (Tuple tuple : pendingOutputPerWindow.values()) {
       ((WindowOutputStream<OrderedStoreKey>) this.outputStream).put(
-          new TimeAndOffsetKey(tuple.getMessageTimeNano(), tuple.getOffset()), tuple);
+          new TimeAndOffsetKey(tuple.getTimeNano(), tuple.getOffset()), tuple);
     }
     this.pendingOutputPerWindow.remove(key);
     this.pendingFlushWindows.add(key);
   }
 
   private OrderedStoreKey getMessageStoreKey(Tuple tuple) {
-    return this.messageStore.getKey(new TimeAndOffsetKey(tuple.getMessageTimeNano(), tuple.getOffset()), tuple);
+    return this.messageStore.getKey(new TimeAndOffsetKey(tuple.getTimeNano(), tuple.getOffset()), tuple);
   }
 
   private void updateWindows(Tuple tuple, List<OrderedStoreKey> wndKeys) {
@@ -223,11 +227,12 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
   }
 
   private long getMessageTimeNano(Tuple tuple) {
-    if (this.getSpec().getTimeField() != null) {
-      return this.getSpec().getNanoTime(tuple.getMessage().getFieldData(this.getSpec().getTimeField()).longValue());
+    if (this.getSpec().getTimestampField() != null) {
+      return this.getSpec()
+          .getNanoTime(tuple.getMessage().getFieldData(this.getSpec().getTimestampField()).longValue());
     }
     // TODO: need to get the event time in broker envelope
-    return tuple.getMessageTimeNano();
+    return tuple.getTimeNano();
   }
 
   private Range<OrderedStoreKey> getMessageKeyRangeByTime(Range<Long> timeRange) {
@@ -284,9 +289,28 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
 
     // now purge message store
     // Set to the next nanosecond w/ minimum offset since the right boundary is exclusive
-    Range<OrderedStoreKey> range =
-        Range.between(new TimeAndOffsetKey(minTime, LongOffset.getMinOffset()), new TimeAndOffsetKey(maxTime + 1,
-            LongOffset.getMinOffset()));
+    OrderedStoreKey minKey = new TimeAndOffsetKey(minTime, LongOffset.getMinOffset());
+    OrderedStoreKey maxKey = new TimeAndOffsetKey(maxTime + 1, LongOffset.getMinOffset());
+    Range<OrderedStoreKey> range = Range.between(minKey, maxKey);
     this.messageStore.purge(range);
   }
+
+  @Override
+  public void refresh(long timeNano, SqlMessageCollector collector, TaskCoordinator coordinator) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void process(Tuple tuple, SqlMessageCollector collector) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public <K> void process(Relation<K> deltaRelation, SqlMessageCollector collector) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
 }

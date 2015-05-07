@@ -63,7 +63,7 @@ public interface Tuple {
    *
    * @return The tuple's message timestamp in nano seconds.
    */
-  long getMessageTimeNano();
+  long getTimeNano();
 
   /**
    * Get the offset of the tuple in the stream. This should be used to uniquely identify a tuple in a stream.

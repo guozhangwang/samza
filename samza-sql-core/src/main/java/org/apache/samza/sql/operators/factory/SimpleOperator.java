@@ -19,16 +19,15 @@
 
 package org.apache.samza.sql.operators.factory;
 
-import org.apache.samza.config.Config;
+import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.OperatorSpec;
-import org.apache.samza.task.TaskContext;
 
 
 /**
  * An abstract class that encapsulate the basic information and methods that all operator classes should implement.
  *
  */
-public abstract class SimpleOperator {
+public abstract class SimpleOperator implements Operator {
   /**
    * The specification of this operator
    */
@@ -43,10 +42,9 @@ public abstract class SimpleOperator {
     this.spec = spec;
   }
 
+  @Override
   public OperatorSpec getSpec() {
     return this.spec;
   }
-
-  public abstract void init(Config config, TaskContext context) throws Exception;
 
 }

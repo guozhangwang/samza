@@ -21,11 +21,10 @@ package org.apache.samza.sql.api.router;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.Operator;
-import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.operators.TupleOperator;
 
 
 /**
@@ -59,32 +58,7 @@ public interface OperatorRouter {
    * @param nextOp The <code>TupleOperator</code> that takes the tuples in the <code>stream</code> as an input.
    * @throws Exception Throws exception if failed
    */
-  void addTupleOperator(EntityName stream, TupleOperator nextOp) throws Exception;
-
-  /**
-   * This method adds a <code>RelationOperator</code> as one of the input operators
-
-   * @param relation The input relation entity name
-   * @param nextOp The <code>RelationOperator</code> that takes the <code>relation</code> as an input
-   * @throws Exception Throws exception if failed
-   */
-  void addRelationOperator(EntityName relation, RelationOperator nextOp) throws Exception;
-
-  /**
-   * This method gets the list of <code>RelationOperator</code>s attached to the <code>relation</code>
-   *
-   * @param relation The identifier of the relation entity
-   * @return The list of <code>RelationOperator</code> taking <code>relation</code> as an input variable
-   */
-  List<RelationOperator> getRelationOperators(EntityName relation);
-
-  /**
-   * This method gets the list of <code>TupleOperator</code>s attached to the <code>stream</code>
-   *
-   * @param stream The identifier of the stream entity
-   * @return The list of <code>TupleOperator</code> taking <code>stream</code> as an input variable
-   */
-  List<TupleOperator> getTupleOperators(EntityName stream);
+  void addOperator(EntityName stream, Operator nextOp) throws Exception;
 
   /**
    * This method gets the list of <code>Operator</code>s attached to an output entity (of any type)
@@ -110,17 +84,10 @@ public interface OperatorRouter {
   boolean hasNextOperators(EntityName output);
 
   /**
-   * This method adds an entity as the system input
+   * This method returns a collection of entities that are inputs to this router
    *
-   * @param input The entity name for the system input
+   * @return The collection of input entity names
    */
-  void addSystemInput(EntityName input);
-
-  /**
-   * This method returns the list of entities as system inputs
-   *
-   * @return The list of <code>EntityName</code>s as system inputs
-   */
-  List<EntityName> getSystemInputs();
+  Set<EntityName> getInputEntities();
 
 }

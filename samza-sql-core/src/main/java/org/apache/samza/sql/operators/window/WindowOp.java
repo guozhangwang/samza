@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.Tuple;
+import org.apache.samza.sql.api.operators.OperatorCallback;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.WindowOutputStream;
@@ -42,8 +43,19 @@ import org.apache.samza.task.TaskContext;
  */
 public abstract class WindowOp extends SimpleOperator {
 
+  /**
+   * The specification object for this window operator
+   */
   protected final WindowOpSpec spec;
+
+  /**
+   * The unique ID for this window operator
+   */
   protected final String wndId;
+
+  /**
+   * The {@link org.apache.samza.sql.operator.window.RetentionPolicy} for this window operator
+   */
   protected final RetentionPolicy retention;
 
   /**
@@ -86,7 +98,7 @@ public abstract class WindowOp extends SimpleOperator {
 
   @SuppressWarnings({ "unchecked" })
   @Override
-  public void init(Config config, TaskContext context) throws Exception {
+  public void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception {
     // TODO: One optimization to the following store is that this.wndStore can implements a delayed-write cache that does not generate 1 writes to the changelog per window update.
     // Instead, the wndStore can batch the writes and flush out the updates to changelog periodically (i.e. everytime the corresponding window output is flushed.)
     this.wndStore =
@@ -115,14 +127,14 @@ public abstract class WindowOp extends SimpleOperator {
    *
    * @throws Exception Throws Exception if failed to flush the window states
    */
-  public abstract void flush() throws Exception;
+  protected abstract void flush() throws Exception;
 
   /**
    * Public API method to allow the window operator update the output streams
    *
    * @throws Exception Throws Exception if failed to update the output stream
    */
-  public abstract void updateOutputs() throws Exception;
+  protected abstract void refresh() throws Exception;
 
   /**
    * Default internal method to access {@code isInputDisabled} member variable

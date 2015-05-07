@@ -20,6 +20,7 @@
 package org.apache.samza.sql.operators.window;
 
 import org.apache.samza.config.Config;
+import org.apache.samza.sql.api.operators.OperatorCallback;
 import org.apache.samza.sql.window.storage.MessageStore;
 import org.apache.samza.task.TaskContext;
 
@@ -37,8 +38,8 @@ public abstract class FullStateWindowOp extends WindowOp {
   }
 
   @Override
-  public void init(Config config, TaskContext context) throws Exception {
-    super.init(config, context);
+  public void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception {
+    super.init(config, context, userCb);
     this.messageStore = (MessageStore) context.getStore("wnd-msg-" + this.wndId);
   }
 

@@ -19,17 +19,14 @@
 
 package org.apache.samza.sql.operators.factory;
 
+import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.OperatorSpec;
-import org.apache.samza.sql.api.operators.RelationOperator;
 import org.apache.samza.sql.api.operators.SqlOperatorFactory;
-import org.apache.samza.sql.api.operators.TupleOperator;
+import org.apache.samza.sql.operators.join.StreamStreamJoin;
+import org.apache.samza.sql.operators.join.StreamStreamJoinSpec;
 import org.apache.samza.sql.operators.partition.PartitionOp;
 import org.apache.samza.sql.operators.partition.PartitionSpec;
-import org.apache.samza.sql.operators.relation.Join;
-import org.apache.samza.sql.operators.relation.JoinSpec;
-import org.apache.samza.sql.operators.stream.InsertStream;
-import org.apache.samza.sql.operators.stream.InsertStreamSpec;
-import org.apache.samza.sql.operators.window.FullStateTimeWindowAutoOp;
+import org.apache.samza.sql.operators.window.FullStateTimeWindowOp;
 import org.apache.samza.sql.operators.window.WindowOpSpec;
 
 
@@ -41,23 +38,14 @@ import org.apache.samza.sql.operators.window.WindowOpSpec;
 public class SimpleOperatorFactoryImpl implements SqlOperatorFactory {
 
   @Override
-  public RelationOperator getRelationOperator(OperatorSpec spec) {
-    if (spec instanceof JoinSpec) {
-      return new Join((JoinSpec) spec);
-    } else if (spec instanceof InsertStreamSpec) {
-      return new InsertStream((InsertStreamSpec) spec);
+  public Operator getOperator(OperatorSpec spec) {
+    if (spec instanceof PartitionSpec) {
+      return new PartitionOp((PartitionSpec) spec);
+    } else if (spec instanceof StreamStreamJoinSpec) {
+      return new StreamStreamJoin((StreamStreamJoinSpec) spec);
+    } else if (spec instanceof WindowOpSpec) {
+      return new FullStateTimeWindowOp((WindowOpSpec) spec);
     }
     throw new UnsupportedOperationException("Unsupported operator specified: " + spec.getClass().getCanonicalName());
   }
-
-  @Override
-  public TupleOperator getTupleOperator(OperatorSpec spec) {
-    if (spec instanceof WindowOpSpec) {
-      return new FullStateTimeWindowAutoOp((WindowOpSpec) spec);
-    } else if (spec instanceof PartitionSpec) {
-      return new PartitionOp((PartitionSpec) spec);
-    }
-    throw new UnsupportedOperationException("Unsupported operator specified" + spec.getClass().getCanonicalName());
-  }
-
 }

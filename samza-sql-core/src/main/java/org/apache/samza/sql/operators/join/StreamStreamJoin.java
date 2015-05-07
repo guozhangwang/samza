@@ -26,16 +26,16 @@ import java.util.Map;
 
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.EntityName;
+import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Stream;
 import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.api.operators.TupleOperator;
+import org.apache.samza.sql.api.operators.OperatorCallback;
 import org.apache.samza.sql.operators.factory.SimpleOperator;
 import org.apache.samza.sql.operators.window.FullStateTimeWindow;
 import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.Range;
 import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
-import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
 import org.apache.samza.task.sql.SqlMessageCollector;
@@ -44,39 +44,27 @@ import org.apache.samza.task.sql.SqlMessageCollector;
 /**
  * This class implements a simple stream-to-stream join
  */
-public class StreamStreamJoiner extends SimpleOperator implements TupleOperator {
+public class StreamStreamJoin extends SimpleOperator {
   private final StreamStreamJoinSpec spec;
 
   private Map<EntityName, FullStateTimeWindow> inputWindows = new HashMap<EntityName, FullStateTimeWindow>();
 
-  public StreamStreamJoiner(StreamStreamJoinSpec spec) {
+  public StreamStreamJoin(StreamStreamJoinSpec spec) {
     super(spec);
     this.spec = spec;
   }
 
   //TODO: stub constructor to allow compilation pass. Need to construct real StreamStreamJoinSpec.
-  public StreamStreamJoiner(String opId, List<String> inputRelations, String output, List<String> joinKeys) {
+  public StreamStreamJoin(String opId, List<String> inputRelations, String output, List<String> joinKeys) {
     super(null);
     this.spec = null;
   }
 
   @Override
-  public void init(Config config, TaskContext context) throws Exception {
+  public void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception {
     // TODO Auto-generated method stub
     // initialize the inputWindows map
 
-  }
-
-  @Override
-  public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    // TODO Auto-generated method stub
-  }
-
-  @Override
-  public void process(Tuple tuple, SqlMessageCollector collector) throws Exception {
-    // TODO Auto-generated method stub
-    Map<EntityName, Stream> joinSets = findJoinSets(tuple);
-    join(tuple, joinSets);
   }
 
   private void join(Tuple tuple, Map<EntityName, Stream> joinSets) {
@@ -189,5 +177,24 @@ public class StreamStreamJoiner extends SimpleOperator implements TupleOperator 
     // This is to deduce the time range to query from the input tuple and the join condition on timestamp field
     // The join condition should be something that can calculate the join key range based on the input tuple and the
     return null;
+  }
+
+  @Override
+  public <K> void process(Relation<K> deltaRelation, SqlMessageCollector collector) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void refresh(long timeNano, SqlMessageCollector collector, TaskCoordinator coordinator) throws Exception {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
+  public void process(Tuple tuple, SqlMessageCollector collector) throws Exception {
+    // TODO Auto-generated method stub
+    Map<EntityName, Stream> joinSets = findJoinSets(tuple);
+    join(tuple, joinSets);
   }
 }

@@ -27,7 +27,7 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.data.IncomingMessageTuple;
-import org.apache.samza.sql.operators.join.StreamStreamJoiner;
+import org.apache.samza.sql.operators.join.StreamStreamJoin;
 import org.apache.samza.sql.operators.window.FullStateTimeWindowOp;
 import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.WindowOutputStream;
@@ -55,7 +55,7 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
   private KeyValueStore<EntityName, List<Object>> opOutputStore;
   private FullStateTimeWindowOp wndOp1;
   private FullStateTimeWindowOp wndOp2;
-  private StreamStreamJoiner joinOp;
+  private StreamStreamJoin joinOp;
 
   private FullStateTimeWindowOp getWindowOp(EntityName streamName) {
     if (streamName.equals(EntityName.getStreamName("kafka:stream1"))) {
@@ -120,8 +120,8 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     StoreMessageCollector sqlCollector = new StoreMessageCollector(this.opOutputStore);
 
     // based on tuple's stream name, get the window op and run process()
-    wndOp1.updateOutputs();
-    wndOp2.updateOutputs();
+    wndOp1.refresh();
+    wndOp2.refresh();
 
     // TODO: update the interface of the StreamStreamJoinOp s.t. it can be more intuitive to human
     // process all output from the window operator
@@ -157,13 +157,13 @@ public class RandomOperatorTask implements StreamTask, InitableTask, WindowableT
     List<String> joinKeys = new ArrayList<String>();
     joinKeys.add("key1");
     joinKeys.add("key2");
-    this.joinOp = new StreamStreamJoiner("joinOp", inputRelations, "joinOutput", joinKeys);
+    this.joinOp = new StreamStreamJoin("joinOp", inputRelations, "joinOutput", joinKeys);
     // Finally, initialize all operators
     this.opOutputStore =
         (KeyValueStore<EntityName, List<Object>>) context.getStore("samza-sql-operator-output-kvstore");
-    this.wndOp1.init(config, context);
-    this.wndOp2.init(config, context);
-    this.joinOp.init(config, context);
+    this.wndOp1.init(config, context, null);
+    this.wndOp2.init(config, context, null);
+    this.joinOp.init(config, context, null);
   }
 
 }

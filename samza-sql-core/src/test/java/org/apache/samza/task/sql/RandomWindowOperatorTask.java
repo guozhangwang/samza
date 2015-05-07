@@ -68,7 +68,7 @@ public class RandomWindowOperatorTask implements StreamTask, InitableTask, Windo
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // based on tuple's stream name, get the window op and run process()
-    wndOp.updateOutputs();
+    wndOp.refresh();
 
     // TODO: update the interface of the StreamStreamJoinOp s.t. it can be more intuitive to human
     // process all output from the window operator
@@ -98,7 +98,7 @@ public class RandomWindowOperatorTask implements StreamTask, InitableTask, Windo
   public void init(Config config, TaskContext context) throws Exception {
     // 1. create a fixed length 10 sec window operator
     this.wndOp = new FullStateTimeWindowOp("wndOp1", 10, "kafka:stream1", "relation1");
-    this.wndOp.init(config, context);
+    this.wndOp.init(config, context, null);
   }
 
 }

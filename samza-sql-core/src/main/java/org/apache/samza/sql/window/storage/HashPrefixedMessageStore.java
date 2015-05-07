@@ -19,6 +19,7 @@
 
 package org.apache.samza.sql.window.storage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.samza.sql.api.data.EntityName;
@@ -40,10 +41,20 @@ public class HashPrefixedMessageStore extends MessageStore {
   }
 
   private String getPrefix(List<Entry<String, Object>> filterFields) {
-    // TODO: need to validate that the filterFields are exactly the fields listed in OrderedStoreKeyFields
     StringBuffer strBuffer = new StringBuffer();
+    List<String> prefixFields = this.getSpec().getPrefixFields();
+    int fieldsFound = 0;
     for (Entry<String, Object> entry : filterFields) {
       strBuffer.append(entry.getValue().toString()).append(PREFIX_DENOMINATOR);
+      if (prefixFields.contains(entry.getKey())) {
+        fieldsFound++;
+        // remove the field from the {@code filterFields} since it is already encoded in the prefix
+        filterFields.remove(entry);
+      }
+    }
+    if (fieldsFound < prefixFields.size()) {
+      throw new IllegalArgumentException(
+          "The filter fields in a range scan have to include all prefix fields in HashPrefixedMessageStore");
     }
     return strBuffer.toString();
   }
@@ -65,8 +76,11 @@ public class HashPrefixedMessageStore extends MessageStore {
   @Override
   public KeyValueIterator<OrderedStoreKey, Tuple> getMessages(Range<OrderedStoreKey> extRange,
       List<Entry<String, Object>> filterFields) {
-    Range<OrderedStoreKey> prefixRange = this.getPrefixedRange(extRange, filterFields);
-    return this.range(prefixRange.getMin(), prefixRange.getMax());
+    List<Entry<String, Object>> internalFilters = new ArrayList<Entry<String, Object>>();
+    internalFilters.addAll(filterFields);
+    Range<OrderedStoreKey> prefixRange = this.getPrefixedRange(extRange, internalFilters);
+    // Now, the list of filters are reduced and part of the filter fields are in the prefixRange already to allow faster range scan
+    return super.getMessages(prefixRange, internalFilters);
   }
 
   @Override

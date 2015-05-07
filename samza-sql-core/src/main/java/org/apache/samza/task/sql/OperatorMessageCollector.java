@@ -25,8 +25,6 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.Operator;
-import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.router.OperatorRouter;
 import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.task.MessageCollector;
@@ -50,24 +48,24 @@ public class OperatorMessageCollector implements SqlMessageCollector {
   }
 
   @Override
-  public void send(Relation deltaRelation) throws Exception {
-    for (RelationOperator op : this.rteCntx.getRelationOperators(deltaRelation.getName())) {
+  public <K> void send(Relation<K> deltaRelation) throws Exception {
+    for (Operator op : this.rteCntx.getNextOperators(deltaRelation.getName())) {
       op.process(deltaRelation, this);
     }
   }
 
   @Override
   public void send(Tuple tuple) throws Exception {
-    for (TupleOperator op : this.rteCntx.getTupleOperators(tuple.getEntityName())) {
+    for (Operator op : this.rteCntx.getNextOperators(tuple.getEntityName())) {
       op.process(tuple, this);
     }
   }
 
   @Override
-  public void timeout(List<EntityName> outputs) throws Exception {
+  public void timeout(long timeNano, List<EntityName> outputs) throws Exception {
     for (EntityName output : outputs) {
       for (Operator op : this.rteCntx.getNextOperators(output)) {
-        op.window(this, this.coordinator);
+        op.refresh(timeNano, this, this.coordinator);
       }
     }
   }

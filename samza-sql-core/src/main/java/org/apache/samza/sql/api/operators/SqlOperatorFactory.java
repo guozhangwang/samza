@@ -37,14 +37,6 @@ public interface SqlOperatorFactory {
    * @param spec The specification of the <code>RelationOperator</code> object
    * @return The relation operator object
    */
-  RelationOperator getRelationOperator(OperatorSpec spec);
-
-  /**
-   * Interface method to create/get the <code>TupleOperator</code> object
-   *
-   * @param spec The specification of the <code>TupleOperator</code> object
-   * @return The tuple operator object
-   */
-  TupleOperator getTupleOperator(OperatorSpec spec);
+  Operator getOperator(OperatorSpec spec);
 
 }

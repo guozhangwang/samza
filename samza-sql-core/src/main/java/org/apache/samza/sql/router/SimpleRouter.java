@@ -21,14 +21,14 @@ package org.apache.samza.sql.router;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.operators.Operator;
-import org.apache.samza.sql.api.operators.RelationOperator;
-import org.apache.samza.sql.api.operators.TupleOperator;
 import org.apache.samza.sql.api.router.OperatorRouter;
 
 
@@ -49,18 +49,33 @@ public class SimpleRouter implements OperatorRouter {
   private Map<EntityName, List> nextOps = new HashMap<EntityName, List>();
 
   /**
-   * List of <code>EntityName</code> as system inputs
+   * Set of <code>EntityName</code> as system inputs
    */
-  private List<EntityName> inputEntities = new ArrayList<EntityName>();
+  private Set<EntityName> inputEntities = new HashSet<EntityName>();
 
+  /**
+   * Set of entities that are not input entities to this OperatorRouter
+   */
+  private Set<EntityName> outputEntities = new HashSet<EntityName>();
+
+  @Override
   @SuppressWarnings("unchecked")
-  private void addOperator(EntityName output, Operator nextOp) {
-    if (nextOps.get(output) == null) {
-      nextOps.put(output, new ArrayList<Operator>());
+  public void addOperator(EntityName input, Operator nextOp) {
+    if (nextOps.get(input) == null) {
+      nextOps.put(input, new ArrayList<Operator>());
     }
-    nextOps.get(output).add(nextOp);
+    nextOps.get(input).add(nextOp);
     operators.add(nextOp);
-
+    // get the operator spec
+    for (EntityName output : nextOp.getSpec().getOutputNames()) {
+      if (inputEntities.contains(output)) {
+        inputEntities.remove(output);
+      }
+      outputEntities.add(output);
+    }
+    if (!outputEntities.contains(input)) {
+      inputEntities.add(input);
+    }
   }
 
   @Override
@@ -68,40 +83,10 @@ public class SimpleRouter implements OperatorRouter {
     return operators.iterator();
   }
 
-  @Override
-  public void addTupleOperator(EntityName outputStream, TupleOperator nextOp) throws Exception {
-    if (!outputStream.isStream()) {
-      throw new IllegalArgumentException("Can't attach an TupleOperator " + nextOp.getSpec().getId()
-          + " to a non-stream entity " + outputStream);
-    }
-    addOperator(outputStream, nextOp);
-  }
-
-  @Override
-  public void addRelationOperator(EntityName outputRelation, RelationOperator nextOp) throws Exception {
-    if (!outputRelation.isRelation()) {
-      throw new IllegalArgumentException("Can't attach an RelationOperator " + nextOp.getSpec().getId()
-          + " to a non-relation entity " + outputRelation);
-    }
-    addOperator(outputRelation, nextOp);
-  }
-
   @SuppressWarnings("unchecked")
   @Override
-  public List<RelationOperator> getRelationOperators(EntityName outputRelation) {
-    if (!outputRelation.isRelation()) {
-      throw new IllegalArgumentException("Can't get RelationOperators for a non-relation output: " + outputRelation);
-    }
-    return nextOps.get(outputRelation);
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public List<TupleOperator> getTupleOperators(EntityName outputStream) {
-    if (!outputStream.isStream()) {
-      throw new IllegalArgumentException("Can't get TupleOperators for a non-stream output: " + outputStream);
-    }
-    return nextOps.get(outputStream);
+  public List<Operator> getNextOperators(EntityName entity) {
+    return nextOps.get(entity);
   }
 
   @Override
@@ -109,25 +94,8 @@ public class SimpleRouter implements OperatorRouter {
     return nextOps.get(output) != null && !nextOps.get(output).isEmpty();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-  public List<Operator> getNextOperators(EntityName output) {
-    return nextOps.get(output);
-  }
-
-  @Override
-  public void addSystemInput(EntityName input) {
-    if (!nextOps.containsKey(input) || nextOps.get(input).isEmpty()) {
-      throw new IllegalStateException("Can't set a system input w/o any next operators. input:" + input);
-    }
-    if (!inputEntities.contains(input)) {
-      inputEntities.add(input);
-    }
-  }
-
-  @Override
-  public List<EntityName> getSystemInputs() {
+  public Set<EntityName> getInputEntities() {
     return this.inputEntities;
   }
-
 }

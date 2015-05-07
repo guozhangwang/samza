@@ -20,17 +20,19 @@
 package org.apache.samza.sql.operators.window;
 
 
-
 /**
  * This abstract class defines the base class for window retention policies
  */
-public abstract class RetentionPolicy {
+public class RetentionPolicy {
+  private static final int ONE_GB = 1000000000;
+  private static final long FOUR_HOUR = 3600 * 4;
+
   private final int maxSize;
-  private final long minTime;
+  private final long minTimeSec;
 
   RetentionPolicy(int retentionSize, long retentionTime) {
     this.maxSize = retentionSize;
-    this.minTime = retentionTime;
+    this.minTimeSec = retentionTime;
   }
 
   public int getSize() {
@@ -38,6 +40,10 @@ public abstract class RetentionPolicy {
   }
 
   public long getTime() {
-    return this.minTime;
+    return this.minTimeSec;
+  }
+
+  public static RetentionPolicy getDefaultRetentionPolicy() {
+    return new RetentionPolicy(ONE_GB, FOUR_HOUR);
   }
 }

@@ -76,7 +76,7 @@ public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
   /**
    * The field in the incoming message as timestamp field
    */
-  private final String timeField;
+  private final String timestampField;
 
   /**
    * Default ctor of the <code>WindowSpec</code> object
@@ -97,7 +97,7 @@ public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
     this.unit = unit;
     this.type = type;
     this.msgStoreSpec = msgStoreSpec;
-    this.timeField = timeField;
+    this.timestampField = timeField;
     this.stepSize = stepSize;
   }
 
@@ -115,34 +115,75 @@ public class WindowOpSpec extends SimpleOperatorSpec implements OperatorSpec {
     return this.size;
   }
 
+  /**
+   * Method to get the window advance step size
+   *
+   * @return The window step size
+   */
   public int getStepSize() {
     return this.stepSize;
   }
 
+  /**
+   * Boolean method to check whether this is a time-based window
+   *
+   * @return True if the corresponding window op is time-based; otherwise, false;
+   */
   public boolean isTimeWindow() {
     return !this.unit.equals(SizeUnit.TUPLE);
   }
 
+  /**
+   * Method to get the unit of the window size and step size
+   *
+   * @return The unit in time unit, or tuple
+   */
   public SizeUnit getUnit() {
     return this.unit;
   }
 
+  /**
+   * Boolean method to check whether this is a session window or not
+   *
+   * @return True if the corresponding window op is a session window; otherwise, false;
+   */
   public boolean isSessionWindow() {
     return this.type.equals(Type.SESSION_WND);
   }
 
+  /**
+   * Method to get the corresponding retention policy for the window op
+   *
+   * @return The {@link org.apache.samza.sql.operators.window.RetentionPolicy} object
+   */
   public RetentionPolicy getRetention() {
     return this.retention;
   }
 
+  /**
+   * Method to get the corresponding message store specification for the window op
+   *
+   * @return The {@link org.apache.samza.sql.window.storage.MessageStoreSpec} object
+   */
   public MessageStoreSpec getMessageStoreSpec() {
     return this.msgStoreSpec;
   }
 
-  public String getTimeField() {
-    return this.timeField;
+  /**
+   * Method to get the timestamp field name, if set
+   *
+   * @return The timestamp field name if set; otherwise, return null
+   */
+  public String getTimestampField() {
+    return this.timestampField;
   }
 
+  /**
+   * Helper function to convert a long value to time in nano seconds based on the time unit specified in this class
+   *
+   * @param longValue The long value to be converted
+   * @return The corresponding time in nano second
+   */
   public long getNanoTime(long longValue) {
     switch (this.unit) {
       case TIME_SEC:

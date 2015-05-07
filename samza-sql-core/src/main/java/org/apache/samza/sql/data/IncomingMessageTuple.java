@@ -81,7 +81,7 @@ public class IncomingMessageTuple implements Tuple {
   }
 
   @Override
-  public long getMessageTimeNano() {
+  public long getTimeNano() {
     return this.recvTimeNano;
   }
 

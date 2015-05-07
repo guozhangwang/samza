@@ -30,7 +30,7 @@ import org.apache.samza.sql.operators.factory.SimpleOperatorSpec;
  */
 public class StreamStreamJoinSpec extends SimpleOperatorSpec {
 
-  public StreamStreamJoinSpec(String id, List<EntityName> inputs, EntityName output) {
+  public StreamStreamJoinSpec(String id, List<EntityName> inputs, EntityName output, List<String> joinKeys) {
     super(id, inputs, output);
     // TODO Auto-generated constructor stub
   }

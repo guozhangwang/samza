@@ -52,7 +52,7 @@ public class StoreMessageCollector implements SqlMessageCollector {
   }
 
   @Override
-  public void timeout(List<EntityName> outputs) throws Exception {
+  public void timeout(long timeNano, List<EntityName> outputs) throws Exception {
     // TODO Auto-generated method stub
   }
 
