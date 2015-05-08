@@ -27,7 +27,7 @@ import java.util.Set;
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.OperatorCallback;
-import org.apache.samza.sql.operators.factory.SimpleOperator;
+import org.apache.samza.sql.operators.factory.SimpleOperatorImpl;
 import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.WindowOutputStream;
 import org.apache.samza.sql.window.storage.WindowState;
@@ -41,7 +41,7 @@ import org.apache.samza.task.TaskContext;
 /**
  * This abstract class is the base for all window operators.
  */
-public abstract class WindowOp extends SimpleOperator {
+public abstract class WindowOp extends SimpleOperatorImpl {
 
   /**
    * The specification object for this window operator
@@ -54,7 +54,7 @@ public abstract class WindowOp extends SimpleOperator {
   protected final String wndId;
 
   /**
-   * The {@link org.apache.samza.sql.operator.window.RetentionPolicy} for this window operator
+   * The {@link org.apache.samza.sql.operators.window.RetentionPolicy} for this window operator
    */
   protected final RetentionPolicy retention;
 
@@ -75,7 +75,7 @@ public abstract class WindowOp extends SimpleOperator {
   protected WindowOutputStream outputStream;
 
   /**
-   * This is the store for outputs per {@link org.apache.samza.sql.window.storage.WindowKey} that are are not ready to be sent or retrieved from the window operator
+   * This is the store for outputs per {@link org.apache.samza.sql.window.storage.OrderedStoreKey} that are are not ready to be sent or retrieved from the window operator
    */
   protected Map<OrderedStoreKey, Map<OrderedStoreKey, Tuple>> pendingOutputPerWindow;
 
@@ -84,8 +84,8 @@ public abstract class WindowOp extends SimpleOperator {
    */
   protected Set<OrderedStoreKey> pendingFlushWindows;
 
-  WindowOp(WindowOpSpec spec) {
-    super(spec);
+  WindowOp(WindowOpSpec spec, OperatorCallback callback) {
+    super(spec, callback);
     this.spec = spec;
     this.wndId = this.spec.getId();
     this.retention = this.spec.getRetention();
@@ -98,7 +98,7 @@ public abstract class WindowOp extends SimpleOperator {
 
   @SuppressWarnings({ "unchecked" })
   @Override
-  public void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception {
+  public void init(Config config, TaskContext context) throws Exception {
     // TODO: One optimization to the following store is that this.wndStore can implements a delayed-write cache that does not generate 1 writes to the changelog per window update.
     // Instead, the wndStore can batch the writes and flush out the updates to changelog periodically (i.e. everytime the corresponding window output is flushed.)
     this.wndStore =
@@ -113,14 +113,14 @@ public abstract class WindowOp extends SimpleOperator {
    * @param tuple The incoming message
    * @throws Exception Throws Exception if add message failed
    */
-  public abstract void addMessage(Tuple tuple) throws Exception;
+  protected abstract void addMessage(Tuple tuple) throws Exception;
 
   /**
    * Public API method to get the window output result
    * @return
    */
   @SuppressWarnings("rawtypes")
-  public abstract WindowOutputStream getResult();
+  protected abstract WindowOutputStream getResult();
 
   /**
    * Public API method to flush the window stores and clear the pending outputs

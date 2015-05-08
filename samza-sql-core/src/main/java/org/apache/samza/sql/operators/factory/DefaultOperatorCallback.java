@@ -17,30 +17,34 @@
  * under the License.
  */
 
-package org.apache.samza.sql.operators.window;
+package org.apache.samza.sql.operators.factory;
 
-import org.apache.samza.config.Config;
+import org.apache.samza.sql.api.data.Relation;
+import org.apache.samza.sql.api.data.Tuple;
 import org.apache.samza.sql.api.operators.OperatorCallback;
-import org.apache.samza.sql.window.storage.MessageStore;
-import org.apache.samza.task.TaskContext;
+import org.apache.samza.task.MessageCollector;
+import org.apache.samza.task.TaskCoordinator;
 
+public class DefaultOperatorCallback implements OperatorCallback {
 
-/**
- * This abstract class defines the base class for all window operators that include a full {@code messageStore}
- */
-public abstract class FullStateWindowOp extends WindowOp {
-
-  protected MessageStore messageStore;
-
-  FullStateWindowOp(WindowOpSpec spec, OperatorCallback callback) {
-    super(spec, callback);
-    // TODO Auto-generated constructor stub
+  @Override
+  public Tuple beforeProcess(Tuple tuple, MessageCollector collector, TaskCoordinator coordinator) {
+    return tuple;
   }
 
   @Override
-  public void init(Config config, TaskContext context) throws Exception {
-    super.init(config, context);
-    this.messageStore = (MessageStore) context.getStore("wnd-msg-" + this.wndId);
+  public Relation beforeProcess(Relation rel, MessageCollector collector, TaskCoordinator coordinator) {
+    return rel;
+  }
+
+  @Override
+  public Tuple beforeSend(Tuple tuple, MessageCollector collector, TaskCoordinator coordinator) {
+    return tuple;
+  }
+
+  @Override
+  public Relation beforeSend(Relation rel, MessageCollector collector, TaskCoordinator coordinator) {
+    return rel;
   }
 
 }

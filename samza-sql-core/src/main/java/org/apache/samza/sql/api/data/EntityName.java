@@ -32,7 +32,7 @@ public class EntityName {
    *
    */
   private enum EntityType {
-    RELATION,
+    TABLE,
     STREAM
   };
 
@@ -90,8 +90,8 @@ public class EntityName {
    *
    * @return true if the entity type is <code>EntityType.RELATION</code>; false otherwise
    */
-  public boolean isRelation() {
-    return this.type.equals(EntityType.RELATION);
+  public boolean isTable() {
+    return this.type.equals(EntityType.TABLE);
   }
 
   /**
@@ -120,7 +120,7 @@ public class EntityName {
    */
   public static EntityName getRelationName(String name) {
     if (relations.get(name) == null) {
-      relations.put(name, new EntityName(EntityType.RELATION, name));
+      relations.put(name, new EntityName(EntityType.TABLE, name));
     }
     return relations.get(name);
   }

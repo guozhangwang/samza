@@ -22,20 +22,19 @@ package org.apache.samza.sql.operators.partition;
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.api.operators.OperatorCallback;
-import org.apache.samza.sql.operators.factory.SimpleOperator;
+import org.apache.samza.sql.operators.factory.SimpleOperatorImpl;
 import org.apache.samza.system.OutgoingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
+import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
-import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
  * This is an example build-in operator that performs a simple stream re-partition operation.
  *
  */
-public final class PartitionOp extends SimpleOperator {
+public final class PartitionOp extends SimpleOperatorImpl {
 
   /**
    * The specification of this <code>PartitionOp</code>
@@ -74,25 +73,26 @@ public final class PartitionOp extends SimpleOperator {
   }
 
   @Override
-  public void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception {
+  public void init(Config config, TaskContext context) throws Exception {
     // TODO Auto-generated method stub
     // No need to initialize store since all inputs are immediately send out
   }
 
   @Override
-  public void refresh(long timeNano, SqlMessageCollector collector, TaskCoordinator coordinator) throws Exception {
+  public void refresh(long timeNano, MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // TODO Auto-generated method stub
     // NOOP or flush
   }
 
   @Override
-  public void process(Tuple tuple, SqlMessageCollector collector) throws Exception {
+  protected void realProcess(Tuple tuple, MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     collector.send(new OutgoingMessageEnvelope(PartitionOp.this.spec.getSystemStream(), tuple.getKey().value(),
         tuple.getMessage().getFieldData(PartitionOp.this.spec.getParKey()).value(), tuple.getMessage().value()));
   }
 
   @Override
-  public <K> void process(Relation<K> deltaRelation, SqlMessageCollector collector) throws Exception {
+  protected void realProcess(Relation deltaRelation, MessageCollector collector, TaskCoordinator coordinator)
+      throws Exception {
     // TODO Auto-generated method stub
 
   }

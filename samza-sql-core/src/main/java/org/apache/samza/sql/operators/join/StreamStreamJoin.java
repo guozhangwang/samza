@@ -29,22 +29,21 @@ import org.apache.samza.sql.api.data.EntityName;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Stream;
 import org.apache.samza.sql.api.data.Tuple;
-import org.apache.samza.sql.api.operators.OperatorCallback;
-import org.apache.samza.sql.operators.factory.SimpleOperator;
+import org.apache.samza.sql.operators.factory.SimpleOperatorImpl;
 import org.apache.samza.sql.operators.window.FullStateTimeWindow;
 import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.Range;
 import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
+import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
-import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
  * This class implements a simple stream-to-stream join
  */
-public class StreamStreamJoin extends SimpleOperator {
+public class StreamStreamJoin extends SimpleOperatorImpl {
   private final StreamStreamJoinSpec spec;
 
   private Map<EntityName, FullStateTimeWindow> inputWindows = new HashMap<EntityName, FullStateTimeWindow>();
@@ -61,7 +60,7 @@ public class StreamStreamJoin extends SimpleOperator {
   }
 
   @Override
-  public void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception {
+  public void init(Config config, TaskContext context) throws Exception {
     // TODO Auto-generated method stub
     // initialize the inputWindows map
 
@@ -180,21 +179,22 @@ public class StreamStreamJoin extends SimpleOperator {
   }
 
   @Override
-  public <K> void process(Relation<K> deltaRelation, SqlMessageCollector collector) throws Exception {
+  protected void realProcess(Relation deltaRelation, MessageCollector collector, TaskCoordinator coordinator)
+      throws Exception {
     // TODO Auto-generated method stub
 
   }
 
   @Override
-  public void refresh(long timeNano, SqlMessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void process(Tuple tuple, SqlMessageCollector collector) throws Exception {
+  protected void realProcess(Tuple tuple, MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // TODO Auto-generated method stub
     Map<EntityName, Stream> joinSets = findJoinSets(tuple);
     join(tuple, joinSets);
+  }
+
+  @Override
+  public void refresh(long timeNano, MessageCollector collector, TaskCoordinator coordinator) throws Exception {
+    // TODO Auto-generated method stub
+
   }
 }

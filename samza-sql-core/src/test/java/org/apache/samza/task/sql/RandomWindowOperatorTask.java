@@ -20,8 +20,11 @@
 package org.apache.samza.task.sql;
 
 import org.apache.samza.config.Config;
+import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
+import org.apache.samza.sql.api.operators.OperatorCallback;
 import org.apache.samza.sql.data.IncomingMessageTuple;
+import org.apache.samza.sql.operators.factory.DefaultOperatorCallback;
 import org.apache.samza.sql.operators.window.FullStateTimeWindowOp;
 import org.apache.samza.sql.window.storage.OrderedStoreKey;
 import org.apache.samza.sql.window.storage.WindowOutputStream;
@@ -44,61 +47,53 @@ import org.apache.samza.task.WindowableTask;
 public class RandomWindowOperatorTask implements StreamTask, InitableTask, WindowableTask {
   private FullStateTimeWindowOp wndOp;
 
+  private class MyOperatorCallback extends DefaultOperatorCallback {
+    @Override
+    public Tuple beforeSend(Tuple tuple, MessageCollector collector, TaskCoordinator coordinator) {
+      collector.send(new OutgoingMessageEnvelope(new SystemStream("kafka", "joinOutput1"), tuple.getKey(), tuple
+          .getMessage()));
+      // message has been intercepted and sent, return null to stop
+      return null;
+    }
+
+    @Override
+    public Relation beforeSend(Relation rel, MessageCollector collector, TaskCoordinator coordinator) {
+      processWindowOutput((WindowOutputStream<OrderedStoreKey>) rel, collector);
+      // all results are processed, return null to stop
+      return null;
+    }
+
+    private void processWindowOutput(WindowOutputStream<OrderedStoreKey> wndOut, MessageCollector collector) {
+      // get each tuple in the join operator's outputs and send it to system stream
+      KeyValueIterator<OrderedStoreKey, Tuple> iter = wndOut.all();
+      while (iter.hasNext()) {
+        Tuple otuple = iter.next().getValue();
+        collector.send(new OutgoingMessageEnvelope(new SystemStream("kafka", "joinOutput1"), otuple.getKey(), otuple
+            .getMessage()));
+      }
+    }
+  }
+
+  private OperatorCallback wndOpCallback = new MyOperatorCallback();
+
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    // construct the input tuple
-    IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
-
     // based on tuple's stream name, get the window op and run process()
-    wndOp.addMessage(ituple);
-    WindowOutputStream<OrderedStoreKey> output = wndOp.getResult();
-    if (output == null) {
-      return;
-    }
-
-    // get the output from the window operator and send them
-    processWindowOutput(output, collector);
-
-    // flush the window operator states and clear up the output, since the output has been processed successfully.
-    wndOp.flush();
+    wndOp.process(new IncomingMessageTuple(envelope), collector, coordinator);
 
   }
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // based on tuple's stream name, get the window op and run process()
-    wndOp.refresh();
-
-    // TODO: update the interface of the StreamStreamJoinOp s.t. it can be more intuitive to human
-    // process all output from the window operator
-    WindowOutputStream<OrderedStoreKey> wndOut = wndOp.getResult();
-    if (wndOut == null) {
-      return;
-    }
-    // get the output from the window operator and send them
-    processWindowOutput(wndOut, collector);
-
-    // flush the window operator states and clear up the output, since the output has been processed successfully.
-    wndOp.flush();
-  }
-
-  private void processWindowOutput(WindowOutputStream<OrderedStoreKey> wndOut, MessageCollector collector) {
-    // TODO Auto-generated method stub
-    // get each tuple in the join operator's outputs and send it to system stream
-    KeyValueIterator<OrderedStoreKey, Tuple> iter = wndOut.all();
-    while (iter.hasNext()) {
-      Tuple otuple = iter.next().getValue();
-      collector.send(new OutgoingMessageEnvelope(new SystemStream("kafka", "joinOutput1"), otuple.getKey(), otuple
-          .getMessage()));
-    }
+    wndOp.refresh(System.nanoTime(), collector, coordinator);
   }
 
   @Override
   public void init(Config config, TaskContext context) throws Exception {
     // 1. create a fixed length 10 sec window operator
-    this.wndOp = new FullStateTimeWindowOp("wndOp1", 10, "kafka:stream1", "relation1");
-    this.wndOp.init(config, context, null);
+    this.wndOp = new FullStateTimeWindowOp("wndOp1", 10, "kafka:stream1", "relation1", wndOpCallback);
+    this.wndOp.init(config, context);
   }
-
 }

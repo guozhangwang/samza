@@ -37,6 +37,6 @@ public interface SqlOperatorFactory {
    * @param spec The specification of the <code>RelationOperator</code> object
    * @return The relation operator object
    */
-  Operator getOperator(OperatorSpec spec);
+  SimpleOperator getOperator(OperatorSpec spec);
 
 }

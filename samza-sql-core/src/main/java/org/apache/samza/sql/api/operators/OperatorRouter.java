@@ -17,14 +17,11 @@
  * under the License.
  */
 
-package org.apache.samza.sql.api.router;
+package org.apache.samza.sql.api.operators;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.samza.sql.api.data.EntityName;
-import org.apache.samza.sql.api.operators.Operator;
 
 
 /**
@@ -49,16 +46,15 @@ import org.apache.samza.sql.api.operators.Operator;
  * </ul>
  *
  */
-public interface OperatorRouter {
+public interface OperatorRouter extends Operator {
 
   /**
    * This method adds a <code>TupleOperator</code> as one of the input operators.
    *
-   * @param stream The output stream entity name
    * @param nextOp The <code>TupleOperator</code> that takes the tuples in the <code>stream</code> as an input.
    * @throws Exception Throws exception if failed
    */
-  void addOperator(EntityName stream, Operator nextOp) throws Exception;
+  void addOperator(SimpleOperator nextOp) throws Exception;
 
   /**
    * This method gets the list of <code>Operator</code>s attached to an output entity (of any type)
@@ -66,28 +62,6 @@ public interface OperatorRouter {
    * @param output The identifier of the output entity
    * @return The list of <code>Operator</code> taking <code>output</code> as input variables
    */
-  List<Operator> getNextOperators(EntityName output);
-
-  /**
-   * This method provides an iterator to go through all operators connected via <code>OperatorRouter</code>
-   *
-   * @return An <code>Iterator</code> for all operators connected via <code>OperatorRouter</code>
-   */
-  Iterator<Operator> iterator();
-
-  /**
-   * This method checks to see whether there is any <code>Operator</code> attached to the entity <code>output</code>
-   *
-   * @param output The output entity name
-   * @return True if there is some operator attached to the <code>output</code>; false otherwise
-   */
-  boolean hasNextOperators(EntityName output);
-
-  /**
-   * This method returns a collection of entities that are inputs to this router
-   *
-   * @return The collection of input entity names
-   */
-  Set<EntityName> getInputEntities();
+  List<SimpleOperator> getNextOperators(EntityName output);
 
 }

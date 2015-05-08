@@ -40,9 +40,9 @@ import org.apache.samza.sql.window.storage.WindowState;
 import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.system.sql.LongOffset;
+import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
-import org.apache.samza.task.sql.SqlMessageCollector;
 
 
 /**
@@ -53,28 +53,38 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
   private final String outputStreamName;
 
   public FullStateTimeWindowOp(WindowOpSpec spec) {
-    super(spec);
+    this(spec, null);
+  }
+
+  public FullStateTimeWindowOp(WindowOpSpec spec, OperatorCallback callback) {
+    super(spec, callback);
     this.outputStreamName = String.format("wnd-outstrm-%s", wndId);
   }
 
   //Ctor for fixed length time window, w/ default retention policy, message store, and timestamp
   public FullStateTimeWindowOp(String wndId, int size, String inputStrm, String outputEntity) {
+    this(new WindowOpSpec(wndId, EntityName.getStreamName(inputStrm), EntityName.getStreamName(outputEntity), size),
+        null);
+  }
+
+  //Ctor for fixed length time window, w/ default retention policy, message store, and timestamp
+  public FullStateTimeWindowOp(String wndId, int size, String inputStrm, String outputEntity, OperatorCallback callback) {
     // TODO Auto-generated constructor stub
-    super(new WindowOpSpec(wndId, EntityName.getStreamName(inputStrm), EntityName.getStreamName(outputEntity), size));
-    this.outputStreamName = String.format("wnd-outstrm-%s", wndId);
+    this(new WindowOpSpec(wndId, EntityName.getStreamName(inputStrm), EntityName.getStreamName(outputEntity), size),
+        callback);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception {
-    super.init(config, context, userCb);
+  public void init(Config config, TaskContext context) throws Exception {
+    super.init(config, context);
     this.outputStream =
         new WindowOutputStream<OrderedStoreKey>((Stream<OrderedStoreKey>) context.getStore(this.outputStreamName),
             EntityName.getStreamName(this.outputStreamName), this.getSpec().getMessageStoreSpec());
   }
 
   @Override
-  public void addMessage(Tuple tuple) throws Exception {
+  protected void addMessage(Tuple tuple) throws Exception {
     // TODO: 1. Check whether the message selector is disabled for this window operator
     //    1. If yes, log a warning and throws exception
     if (this.isInputDisabled()) {
@@ -101,12 +111,12 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
 
   @SuppressWarnings("unchecked")
   @Override
-  public WindowOutputStream<OrderedStoreKey> getResult() {
+  protected WindowOutputStream<OrderedStoreKey> getResult() {
     return this.outputStream;
   }
 
   @Override
-  public void flush() throws Exception {
+  protected void flush() throws Exception {
     // clear the current window output, purge the out-of-retention windows,
     // and flush the wndStore and messageStore
     this.outputStream.clear();
@@ -121,7 +131,7 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
   }
 
   @Override
-  public void refresh() {
+  protected void refresh() {
     for (OrderedStoreKey key : this.pendingOutputPerWindow.keySet()) {
       // for each window w/ pending output, check to see whether we need to emit the corresponding window outputs
       //       1. If the window is the current window, check with early emission policy to see whether we need to flush aggregated result
@@ -296,21 +306,21 @@ public class FullStateTimeWindowOp extends FullStateWindowOp implements FullStat
   }
 
   @Override
-  public void refresh(long timeNano, SqlMessageCollector collector, TaskCoordinator coordinator) throws Exception {
+  public void refresh(long timeNano, MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // TODO Auto-generated method stub
 
   }
 
   @Override
-  public void process(Tuple tuple, SqlMessageCollector collector) throws Exception {
+  protected void realProcess(Tuple tuple, MessageCollector collector, TaskCoordinator coordinator) throws Exception {
     // TODO Auto-generated method stub
 
   }
 
   @Override
-  public <K> void process(Relation<K> deltaRelation, SqlMessageCollector collector) throws Exception {
+  protected void realProcess(Relation deltaRelation, MessageCollector collector, TaskCoordinator coordinator)
+      throws Exception {
     // TODO Auto-generated method stub
 
   }
-
 }

@@ -20,22 +20,19 @@
 package org.apache.samza.task.sql;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.EntityName;
-import org.apache.samza.sql.api.operators.Operator;
-import org.apache.samza.sql.api.router.OperatorRouter;
 import org.apache.samza.sql.data.IncomingMessageTuple;
 import org.apache.samza.sql.operators.factory.SimpleOperatorFactoryImpl;
+import org.apache.samza.sql.operators.factory.SimpleRouter;
 import org.apache.samza.sql.operators.join.StreamStreamJoin;
 import org.apache.samza.sql.operators.join.StreamStreamJoinSpec;
 import org.apache.samza.sql.operators.partition.PartitionOp;
 import org.apache.samza.sql.operators.partition.PartitionSpec;
 import org.apache.samza.sql.operators.window.FullStateTimeWindowOp;
 import org.apache.samza.sql.operators.window.WindowOpSpec;
-import org.apache.samza.sql.router.SimpleRouter;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.SystemStream;
 import org.apache.samza.task.InitableTask;
@@ -60,32 +57,17 @@ import org.apache.samza.task.WindowableTask;
  */
 public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
 
-  private OperatorRouter rteCntx;
+  private SimpleRouter rteCntx;
 
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator)
       throws Exception {
-    SqlMessageCollector opCollector = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
-
-    IncomingMessageTuple ituple = new IncomingMessageTuple(envelope);
-    for (Iterator<Operator> iter = this.rteCntx.getNextOperators(ituple.getEntityName()).iterator(); iter
-        .hasNext();) {
-      iter.next().process(ituple, opCollector);
-    }
-
+    this.rteCntx.process(new IncomingMessageTuple(envelope), collector, coordinator);
   }
 
   @Override
   public void window(MessageCollector collector, TaskCoordinator coordinator) throws Exception {
-    SqlMessageCollector opCollector = new OperatorMessageCollector(collector, coordinator, this.rteCntx);
-
-    long nanoSec = System.nanoTime();
-    for (EntityName entity : this.rteCntx.getInputEntities()) {
-      for (Iterator<Operator> iter = this.rteCntx.getNextOperators(entity).iterator(); iter.hasNext();) {
-        iter.next().refresh(nanoSec, opCollector, coordinator);
-      }
-    }
-
+    this.rteCntx.refresh(System.nanoTime(), collector, coordinator);
   }
 
   @Override
@@ -134,17 +116,14 @@ public class StreamSqlTask implements StreamTask, InitableTask, WindowableTask {
     // Now, connecting the operators via the OperatorRouter
     this.rteCntx = new SimpleRouter();
     // 1. set two system input operators (i.e. two window operators)
-    this.rteCntx.addOperator(spec1.getInputName(), wnd1);
-    this.rteCntx.addOperator(spec2.getInputName(), wnd2);
+    this.rteCntx.addOperator(wnd1);
+    this.rteCntx.addOperator(wnd2);
     // 2. connect join operator to both window operators
-    this.rteCntx.addOperator(spec1.getOutputName(), join);
-    this.rteCntx.addOperator(spec2.getOutputName(), join);
+    this.rteCntx.addOperator(join);
     // 3. connect stream operator to the join operator
     // 4. connect re-partition operator to the stream operator
-    this.rteCntx.addOperator(joinSpec.getOutputName(), par);
+    this.rteCntx.addOperator(par);
 
-    for (Iterator<Operator> iter = this.rteCntx.iterator(); iter.hasNext();) {
-      iter.next().init(config, context, null);
-    }
+    this.rteCntx.init(config, context);
   }
 }

@@ -37,8 +37,8 @@ public class MessageStore extends WindowOutputStream<OrderedStoreKey> {
    * Ctor for {@code MessageStore}
    *
    * @param msgStore The underlying store used for messages. It can either be in-memory or on-disk, and should not be a logged store to avoid performance issue.
-   * @param OrderedStoreKeyFields The list of fields in the message fields used as ordering keys (should include all prefix fields + timestamp field (optional))
    * @param strmName The stream name that uniquely identifies the message stream
+   * @param spec The specification of the message store
    */
   public MessageStore(Stream<OrderedStoreKey> msgStore, EntityName strmName, MessageStoreSpec spec) {
     super(msgStore, strmName, spec);
@@ -76,7 +76,7 @@ public class MessageStore extends WindowOutputStream<OrderedStoreKey> {
   /**
    * Get rid of a range of old messages
    *
-   * @param range The external key range to be cleaned up
+   * @param extRange The external key range to be cleaned up
    */
   public void purge(Range<OrderedStoreKey> extRange) {
     KeyValueIterator<OrderedStoreKey, Tuple> iter = this.range(extRange.getMin(), extRange.getMax());

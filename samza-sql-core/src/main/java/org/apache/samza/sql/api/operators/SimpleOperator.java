@@ -17,34 +17,13 @@
  * under the License.
  */
 
-package org.apache.samza.sql.operators.factory;
+package org.apache.samza.sql.api.operators;
 
-import org.apache.samza.sql.api.operators.Operator;
-import org.apache.samza.sql.api.operators.OperatorSpec;
-
-
-/**
- * An abstract class that encapsulate the basic information and methods that all operator classes should implement.
- *
- */
-public abstract class SimpleOperator implements Operator {
+public interface SimpleOperator extends Operator {
   /**
-   * The specification of this operator
-   */
-  private final OperatorSpec spec;
-
-  /**
-   * Ctor of <code>SimpleOperator</code> class
+   * Method to the specification of this <code>Operator</code>
    *
-   * @param spec The specification of this operator
+   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
    */
-  public SimpleOperator(OperatorSpec spec) {
-    this.spec = spec;
-  }
-
-  @Override
-  public OperatorSpec getSpec() {
-    return this.spec;
-  }
-
+  OperatorSpec getSpec();
 }

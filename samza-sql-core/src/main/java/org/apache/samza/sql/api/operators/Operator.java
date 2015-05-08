@@ -22,36 +22,20 @@ package org.apache.samza.sql.api.operators;
 import org.apache.samza.config.Config;
 import org.apache.samza.sql.api.data.Relation;
 import org.apache.samza.sql.api.data.Tuple;
+import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.TaskContext;
 import org.apache.samza.task.TaskCoordinator;
-import org.apache.samza.task.sql.SqlMessageCollector;
 
 
-/**
- * This class defines the common interface for operator classes, no matter what input data are.
- *
- * <p> It extends the <code>InitableTask</code> and <code>WindowableTask</code> to reuse the interface methods
- * <code>init</code> and <code>window</code> for initialization and timeout operations
- *
- */
 public interface Operator {
-
-  /**
-   * Method to the specification of this <code>Operator</code>
-   *
-   * @return The <code>OperatorSpec</code> object that defines the configuration/parameters of the operator
-   */
-  OperatorSpec getSpec();
-
   /**
    * Method to initialize the operator
    *
    * @param config The configuration object
    * @param context The task context
-   * @param userCb The user callback functions.
    * @throws Exception Throws Exception if failed to initialize the operator
    */
-  void init(Config config, TaskContext context, OperatorCallback userCb) throws Exception;
+  void init(Config config, TaskContext context) throws Exception;
 
   /**
    * Method to perform a relational algebra on a set of relations, or a relation-to-stream function
@@ -63,7 +47,8 @@ public interface Operator {
    * @param collector The <code>SqlMessageCollector</code> object that accepts outputs from the operator
    * @throws Exception Throws exception if failed
    */
-  <K> void process(Relation<K> deltaRelation, SqlMessageCollector collector) throws Exception;
+  void process(Relation deltaRelation, MessageCollector collector, TaskCoordinator coordinator)
+      throws Exception;
 
   /**
    * Interface method to process on an input tuple.
@@ -72,7 +57,7 @@ public interface Operator {
    * @param collector The <code>SqlMessageCollector</code> object that accepts outputs from the operator
    * @throws Exception Throws exception if failed
    */
-  void process(Tuple tuple, SqlMessageCollector collector) throws Exception;
+  void process(Tuple tuple, MessageCollector collector, TaskCoordinator coordinator) throws Exception;
 
   /**
    * Method to refresh the result when a timer expires
@@ -80,6 +65,6 @@ public interface Operator {
    * @param timeNano The current system time in nano second
    * @throws Exception Throws exception if failed
    */
-  void refresh(long timeNano, SqlMessageCollector collector, TaskCoordinator coordinator) throws Exception;
+  void refresh(long timeNano, MessageCollector collector, TaskCoordinator coordinator) throws Exception;
 
 }

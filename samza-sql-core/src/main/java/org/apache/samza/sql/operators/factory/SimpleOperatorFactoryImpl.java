@@ -19,8 +19,8 @@
 
 package org.apache.samza.sql.operators.factory;
 
-import org.apache.samza.sql.api.operators.Operator;
 import org.apache.samza.sql.api.operators.OperatorSpec;
+import org.apache.samza.sql.api.operators.SimpleOperator;
 import org.apache.samza.sql.api.operators.SqlOperatorFactory;
 import org.apache.samza.sql.operators.join.StreamStreamJoin;
 import org.apache.samza.sql.operators.join.StreamStreamJoinSpec;
@@ -38,7 +38,7 @@ import org.apache.samza.sql.operators.window.WindowOpSpec;
 public class SimpleOperatorFactoryImpl implements SqlOperatorFactory {
 
   @Override
-  public Operator getOperator(OperatorSpec spec) {
+  public SimpleOperator getOperator(OperatorSpec spec) {
     if (spec instanceof PartitionSpec) {
       return new PartitionOp((PartitionSpec) spec);
     } else if (spec instanceof StreamStreamJoinSpec) {

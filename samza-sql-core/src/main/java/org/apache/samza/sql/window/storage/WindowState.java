@@ -62,7 +62,7 @@ public class WindowState {
   /**
    * Set the last offset in this window.
    *
-   * <p>NOOP if {@code offset} <= this window's {@code lastOffset}
+   * <p>NOOP if {@code offset} &lt;= this window's {@code lastOffset}
    *
    * @param offset The offset to be set
    */
@@ -77,7 +77,7 @@ public class WindowState {
   /**
    * Set the end time of this window in nano seconds.
    *
-   * <p> NOOP if {@code timeNano} <= this window's current end time in nanosecond
+   * <p> NOOP if {@code timeNano} &lt;= this window's current end time in nanosecond
    *
    * @param timeNano The end time to be set
    */
